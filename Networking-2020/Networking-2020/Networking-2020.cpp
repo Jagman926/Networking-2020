@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <iostream>
 #include "RakNet/RakPeerInterface.h"
 #include <string.h>
 #include "RakNet/MessageIdentifiers.h"
@@ -8,8 +9,6 @@ unsigned int maxClients;
 // the server port number
 unsigned short serverPort;
 
-
-
 int main(void)
 {
 	char str[512];
@@ -17,7 +16,7 @@ int main(void)
 	bool isServer;
 
 	// Create our packet variable
-	RakNet::Packet* packet;
+	RakNet::Packet *packet;
 
 	printf("(C) or (S)erver?\n");
 	fgets(str, 512, stdin);
@@ -44,14 +43,14 @@ int main(void)
 		fgets(str, 512, stdin);
 		// Set max clients to inputed value in str
 		maxClients = strtol(str, NULL, 0);
-
+		
 		// Prompt for server port input
 		printf("Enter server port number\n");
 		// Read user input
 		fgets(str, 512, stdin);
 		// Set server port to inputed value in str
 		serverPort = strtol(str, NULL, 0);
-		
+
 		RakNet::SocketDescriptor sd(serverPort, 0);
 		peer->Startup(maxClients, &sd, 1);
 		isServer = true;
@@ -67,7 +66,9 @@ int main(void)
 	{
 		printf("Enter server IP or hit enter for 127.0.0.1\n");
 		fgets(str, 512, stdin);
-		if (str[0] == 0) {
+		
+		// Changed == to 10 since fgets prints enter as 10 instead of 0
+		if (str[0] == 10) {
 			strcpy(str, "127.0.0.1");
 		}
 		printf("Starting the client.\n");
