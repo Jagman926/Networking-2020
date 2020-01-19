@@ -1,13 +1,20 @@
 #include <stdio.h>
-#include <iostream>
-#include "RakNet/RakPeerInterface.h"
 #include <string.h>
+#include "RakNet/RakPeerInterface.h"
 #include "RakNet/MessageIdentifiers.h"
+#include "Raknet/BitStream.h"
+#include "Raknet/RakNetTypes.h"  // MessageID
 
 // number of maximum clients
 unsigned int maxClients;
 // the server port number
 unsigned short serverPort;
+
+enum GameMessages
+{
+	ID_GAME_MESSAGE_1 = ID_USER_PACKET_ENUM + 1,
+	ID_GAME_MESSAGE_2
+};
 
 int main(void)
 {
@@ -92,7 +99,22 @@ int main(void)
 				printf("Another client has connected.\n");
 				break;
 			case ID_CONNECTION_REQUEST_ACCEPTED:
-				printf("Our connection request has been accepted.\n");
+				{
+					printf("Our connection request has been accepted.\n");
+
+					// Use a BitStream to write a custom user message
+					// Bitstreams are easier to use than sending casted structures, and handle endian swapping automatically
+					RakNet::BitStream bsOut;
+					bsOut.Write((RakNet::MessageID)ID_GAME_MESSAGE_1);
+					bsOut.Write("Hello world");
+					peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
+
+					// New bitstream for the second message
+					RakNet::BitStream bsOut2;
+					bsOut2.Write((RakNet::MessageID)ID_GAME_MESSAGE_2);
+					bsOut2.Write("Goodbye world");
+					peer->Send(&bsOut2, HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
+				}
 				break;
 			case ID_NEW_INCOMING_CONNECTION:
 				printf("A connection is incoming.\n");
@@ -116,6 +138,27 @@ int main(void)
 					printf("Connection lost.\n");
 				}
 				break;
+
+			case ID_GAME_MESSAGE_1:
+				{
+					RakNet::RakString rs;
+					RakNet::BitStream bsIn(packet->data, packet->length, false);
+					bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
+					bsIn.Read(rs);
+					printf("%s\n", rs.C_String());
+				}
+				break;
+
+			case ID_GAME_MESSAGE_2:
+				{
+					RakNet::RakString rs;
+					RakNet::BitStream bsIn(packet->data, packet->length, false);
+					bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
+					bsIn.Read(rs);
+					printf("%s\n", rs.C_String());
+					}
+				break;
+
 			default:
 				printf("Message with identifier %i has arrived.\n", packet->data[0]);
 				break;
@@ -124,9 +167,6 @@ int main(void)
 	}
 
 	// TODO - Add code body here
-
-	
-	
 
 	RakNet::RakPeerInterface::DestroyInstance(peer);
 
