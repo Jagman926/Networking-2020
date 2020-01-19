@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <sstream>
 #include "RakNet/RakPeerInterface.h"
 #include "RakNet/MessageIdentifiers.h"
 #include "Raknet/BitStream.h"
@@ -13,12 +14,16 @@ unsigned short serverPort;
 enum GameMessages
 {
 	ID_GAME_MESSAGE_1 = ID_USER_PACKET_ENUM + 1,
-	ID_GAME_MESSAGE_2
+	// Custom message identifier for welcoming the player
+	ID_GAME_MESSAGE_PLAYER_CONNECTED,
+	ID_GAME_MESSAGE_PLAYER_DISCONNECTED
 };
 
 int main(void)
 {
 	char str[512];
+	// Name of the client 
+	char clientName[512];
 	RakNet::RakPeerInterface* peer = RakNet::RakPeerInterface::GetInstance();
 	bool isServer;
 
@@ -102,18 +107,35 @@ int main(void)
 				{
 					printf("Our connection request has been accepted.\n");
 
+					// Prompt for player's name
+					printf("Type your name: ");
+					// Read their input and store it
+					fgets(clientName, 512, stdin);
+
 					// Use a BitStream to write a custom user message
 					// Bitstreams are easier to use than sending casted structures, and handle endian swapping automatically
+					
 					RakNet::BitStream bsOut;
-					bsOut.Write((RakNet::MessageID)ID_GAME_MESSAGE_1);
-					bsOut.Write("Hello world");
+					bsOut.Write((RakNet::MessageID)ID_GAME_MESSAGE_PLAYER_CONNECTED);
+					bsOut.Write(clientName);
 					peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
 
-					// New bitstream for the second message
-					RakNet::BitStream bsOut2;
-					bsOut2.Write((RakNet::MessageID)ID_GAME_MESSAGE_2);
-					bsOut2.Write("Goodbye world");
-					peer->Send(&bsOut2, HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
+					// Prompt for disconnect message (it doesn't actually disconnect yet, just sends a goodbye message)
+					printf("Disconnect? Y/N: " );
+					// Get input
+					fgets(str, 512, stdin);
+					// if yes,
+					if ((str[0] == 'y') || (str[0] == 'Y'))
+					{
+						// new bitstream for the disconnect message
+						RakNet::BitStream bsOut2;
+						// write to our second custom message identifier
+						bsOut2.Write((RakNet::MessageID)ID_GAME_MESSAGE_PLAYER_DISCONNECTED);
+						// write the client name from before over to our second bitstream
+						bsOut2.Write(clientName);
+						// send it to the second message identifier
+						peer->Send(&bsOut2, HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
+					}
 				}
 				break;
 			case ID_NEW_INCOMING_CONNECTION:
@@ -149,15 +171,27 @@ int main(void)
 				}
 				break;
 
-			case ID_GAME_MESSAGE_2:
+			// Custom message loop for player welcome
+			case ID_GAME_MESSAGE_PLAYER_CONNECTED:
 				{
 					RakNet::RakString rs;
 					RakNet::BitStream bsIn(packet->data, packet->length, false);
 					bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
 					bsIn.Read(rs);
-					printf("%s\n", rs.C_String());
-					}
+					printf("Welcome to the server, %s\n", rs.C_String());
+				}
 				break;
+
+			// Custom message loop for player disconnect
+			case ID_GAME_MESSAGE_PLAYER_DISCONNECTED:
+			{
+				RakNet::RakString rs;
+				RakNet::BitStream bsIn(packet->data, packet->length, false);
+				bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
+				bsIn.Read(rs);
+				printf("Goodbye, %s\n", rs.C_String());
+			}
+			break;
 
 			default:
 				printf("Message with identifier %i has arrived.\n", packet->data[0]);
