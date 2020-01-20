@@ -30,7 +30,7 @@ struct messagePack
 {
 public: 
 	RakNet::MessageID msgID;
-	// Should use const char* to pre allocate memory instead of string
+	// Should use pre allocated byte array memory instead of string
 	std::string msgString;
 
 	// Functions
