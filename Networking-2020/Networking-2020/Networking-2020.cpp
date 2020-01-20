@@ -6,6 +6,9 @@
 #include "Raknet/BitStream.h"
 #include "Raknet/RakNetTypes.h"  // MessageID
 
+// NOTES:
+// Command Prompt > ipconfig > IPv4 (gets global IP of computer for server connection)
+
 // number of maximum clients
 unsigned int maxClients;
 // the server port number
@@ -27,6 +30,7 @@ struct messagePack
 {
 public: 
 	RakNet::MessageID msgID;
+	// Should use const char* to pre allocate memory instead of string
 	std::string msgString;
 
 	// Functions
