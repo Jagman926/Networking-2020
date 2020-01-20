@@ -50,83 +50,91 @@ int main(void)
 
 	// Create our packet variable
 	RakNet::Packet *packet;
+	// Connected to chat
+	bool connected = false;
 
-	printf("(C) or (S)erver?\n");
-	fgets(str, 512, stdin);
-	
-
-	if ((str[0] == 'c') || (str[0] == 'C'))
-	{
-		RakNet::SocketDescriptor sd;
-		peer->Startup(1, &sd, 1);
-		isServer = false;
-
-		// Prompt for server port input
-		printf("Enter server port number\n");
-		// Read user input
-		fgets(str, 512, stdin);
-		// Set server port to inputed value in str
-		serverPort = strtol(str, NULL, 0);
-	}
-	else {
-		
-		// Prompt for client number input; only when using a server
-		printf("Enter maximum client number\n");
-		// Read user input
-		fgets(str, 512, stdin);
-		// Set max clients to inputed value in str
-		maxClients = strtol(str, NULL, 0);
-		
-		// Prompt for server port input
-		printf("Enter server port number\n");
-		// Read user input
-		fgets(str, 512, stdin);
-		// Set server port to inputed value in str
-		serverPort = strtol(str, NULL, 0);
-
-		RakNet::SocketDescriptor sd(serverPort, 0);
-		peer->Startup(maxClients, &sd, 1);
-		isServer = true;
-	}
-
-	if (isServer)
-	{
-		printf("Starting the server!!!\n");
-		// We need to let the server accept incoming connections from the clients
-		peer->SetMaximumIncomingConnections(maxClients);
-	}
-	else 
-	{
-		printf("Enter server IP or hit enter for 127.0.0.1\n");
-		fgets(str, 512, stdin);
-		
-		// Changed == to 10 since fgets prints enter as 10 instead of 0
-		if (str[0] == 10) {
-			strcpy(str, "127.0.0.1");
-		}
-		printf("Starting the client.\n");
-		peer->Connect(str, serverPort, 0, 0);
-
-	}
 	
 	while (1)
 	{
-		for (packet = peer->Receive(); packet; peer->DeallocatePacket(packet), packet = peer->Receive())
+		if (!connected)
 		{
-			
+			printf("(C) or (S)erver?\n");
+			fgets(str, 512, stdin);
 
-			switch (packet->data[0])
+			if ((str[0] == 'c') || (str[0] == 'C'))
 			{
-			case ID_REMOTE_DISCONNECTION_NOTIFICATION:
-				printf("Another client has disconnected.\n");
-				break;
-			case ID_REMOTE_CONNECTION_LOST:
-				printf("Another client has lost the connection.\n");
-				break;
-			case ID_REMOTE_NEW_INCOMING_CONNECTION:
-				printf("Another client has connected.\n");
-				break;
-			case ID_CONNECTION_REQUEST_ACCEPTED:
+				RakNet::SocketDescriptor sd;
+				peer->Startup(1, &sd, 1);
+				isServer = false;
+
+				// Prompt for server port input
+				printf("Enter server port number\n");
+				// Read user input
+				fgets(str, 512, stdin);
+				// Set server port to inputed value in str
+				serverPort = strtol(str, NULL, 0);
+				// Connected
+				connected = true;
+			}
+			else {
+
+				// Prompt for client number input; only when using a server
+				printf("Enter maximum client number\n");
+				// Read user input
+				fgets(str, 512, stdin);
+				// Set max clients to inputed value in str
+				maxClients = strtol(str, NULL, 0);
+
+				// Prompt for server port input
+				printf("Enter server port number\n");
+				// Read user input
+				fgets(str, 512, stdin);
+				// Set server port to inputed value in str
+				serverPort = strtol(str, NULL, 0);
+
+				RakNet::SocketDescriptor sd(serverPort, 0);
+				peer->Startup(maxClients, &sd, 1);
+				isServer = true;
+				// Connected
+				connected = true;
+			}
+
+			if (isServer)
+			{
+				printf("Starting the server!!!\n");
+				// We need to let the server accept incoming connections from the clients
+				peer->SetMaximumIncomingConnections(maxClients);
+			}
+			else
+			{
+				printf("Enter server IP or hit enter for 127.0.0.1\n");
+				fgets(str, 512, stdin);
+
+				// Changed == to 10 since fgets prints enter as 10 instead of 0
+				if (str[0] == 10) {
+					strcpy(str, "127.0.0.1");
+				}
+				printf("Starting the client.\n");
+				peer->Connect(str, serverPort, 0, 0);
+
+			}
+		}
+		else
+		{
+			for (packet = peer->Receive(); packet; peer->DeallocatePacket(packet), packet = peer->Receive())
+			{
+				switch (packet->data[0])
+				{
+				case ID_REMOTE_DISCONNECTION_NOTIFICATION:
+					printf("Another client has disconnected.\n");
+					break;
+				case ID_REMOTE_CONNECTION_LOST:
+					printf("Another client has lost the connection.\n");
+					break;
+				case ID_REMOTE_NEW_INCOMING_CONNECTION:
+					printf("Another client has connected.\n");
+					break;
+				case ID_CONNECTION_REQUEST_ACCEPTED:
 				{
 					printf("Our connection request has been accepted.\n");
 
@@ -141,7 +149,7 @@ int main(void)
 					peer->Send((const char*)&pack, sizeof(pack), HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
 
 					// Prompt for disconnect message (it doesn't actually disconnect yet, just sends a goodbye message)
-					printf("Disconnect? Y/N: " );
+					printf("Disconnect? Y/N: ");
 					// Get input
 					fgets(str, 512, stdin);
 					// if yes,
@@ -151,34 +159,35 @@ int main(void)
 						messagePack pack(ID_GAME_MESSAGE_PLAYER_DISCONNECTED, clientName);
 						// Send the data structure to the server by casting it to a byte stream using const char* and passing the size of our data structure
 						peer->Send((const char*)&pack, sizeof(pack), HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
-						
+						// Set to disconnect from server after loop is finished
+						connected = false;
 					}
 				}
 				break;
-			case ID_NEW_INCOMING_CONNECTION:
-				printf("A connection is incoming.\n");
-				break;
-			case ID_NO_FREE_INCOMING_CONNECTIONS:
-				printf("The server is full.\n");
-				break;
-			case ID_DISCONNECTION_NOTIFICATION:
-				if (isServer) {
-					printf("A client has disconnected.\n");
-				}
-				else {
-					printf("We have been disconnected.\n");
-				}
-				break;
-			case ID_CONNECTION_LOST:
-				if (isServer) {
-					printf("A client lost the connection.\n");
-				}
-				else {
-					printf("Connection lost.\n");
-				}
-				break;
+				case ID_NEW_INCOMING_CONNECTION:
+					printf("A connection is incoming.\n");
+					break;
+				case ID_NO_FREE_INCOMING_CONNECTIONS:
+					printf("The server is full.\n");
+					break;
+				case ID_DISCONNECTION_NOTIFICATION:
+					if (isServer) {
+						printf("A client has disconnected.\n");
+					}
+					else {
+						printf("We have been disconnected.\n");
+					}
+					break;
+				case ID_CONNECTION_LOST:
+					if (isServer) {
+						printf("A client lost the connection.\n");
+					}
+					else {
+						printf("Connection lost.\n");
+					}
+					break;
 
-			case ID_GAME_MESSAGE_1:
+				case ID_GAME_MESSAGE_1:
 				{
 					RakNet::RakString rs;
 					RakNet::BitStream bsIn(packet->data, packet->length, false);
@@ -188,8 +197,8 @@ int main(void)
 				}
 				break;
 
-			// Custom message loop for player welcome
-			case ID_GAME_MESSAGE_PLAYER_CONNECTED:
+				// Custom message loop for player welcome
+				case ID_GAME_MESSAGE_PLAYER_CONNECTED:
 				{
 					// Cast packet to our data structure
 					messagePack* p = (messagePack*)packet->data;
@@ -198,21 +207,26 @@ int main(void)
 				}
 				break;
 
-			// Custom message loop for player disconnect
-			case ID_GAME_MESSAGE_PLAYER_DISCONNECTED:
-			{
-				// Cast packet to our data structure
-				messagePack* p = (messagePack*)packet->data;
-				// Print the message with the message string from the structure
-				printf("Goodbye, %s\n", p->msgString.c_str());
+				// Custom message loop for player disconnect
+				case ID_GAME_MESSAGE_PLAYER_DISCONNECTED:
+				{
+					// Cast packet to our data structure
+					messagePack* p = (messagePack*)packet->data;
+					// Print the message with the message string from the structure
+					printf("Goodbye, %s\n", p->msgString.c_str());
 
-			}
-			break;
-
-			default:
-				printf("Message with identifier %i has arrived.\n", packet->data[0]);
+				}
 				break;
+
+				default:
+					printf("Message with identifier %i has arrived.\n", packet->data[0]);
+					break;
+				}
 			}
+
+			// If set to disconnect, shutdown connection between server
+			if(!connected)
+				peer->Shutdown(50, 0, LOW_PRIORITY);
 		}
 
 	}
