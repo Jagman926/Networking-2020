@@ -19,6 +19,23 @@ enum GameMessages
 	ID_GAME_MESSAGE_PLAYER_DISCONNECTED
 };
 
+
+// Custom message packet structure /////////
+// Force compiler to pack the structure as byte-aligned.
+#pragma pack (push, 1)
+struct messagePack
+{
+public: 
+	RakNet::MessageID msgID;
+	std::string msgString;
+
+	// Functions
+	messagePack(RakNet::MessageID ID, std::string string) { msgID = ID, msgString = string; };
+	void CreatePacket(RakNet::MessageID ID, std::string string) { msgID = ID, msgString = string; };
+	
+};
+#pragma pack (pop)
+
 int main(void)
 {
 	char str[512];
@@ -92,6 +109,8 @@ int main(void)
 	{
 		for (packet = peer->Receive(); packet; peer->DeallocatePacket(packet), packet = peer->Receive())
 		{
+			
+
 			switch (packet->data[0])
 			{
 			case ID_REMOTE_DISCONNECTION_NOTIFICATION:
@@ -112,13 +131,10 @@ int main(void)
 					// Read their input and store it
 					fgets(clientName, 512, stdin);
 
-					// Use a BitStream to write a custom user message
-					// Bitstreams are easier to use than sending casted structures, and handle endian swapping automatically
-					
-					RakNet::BitStream bsOut;
-					bsOut.Write((RakNet::MessageID)ID_GAME_MESSAGE_PLAYER_CONNECTED);
-					bsOut.Write(clientName);
-					peer->Send(&bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
+					// Create data structure and initialize with our message identifier and message, in this case the user inputted client name
+					messagePack pack(ID_GAME_MESSAGE_PLAYER_CONNECTED, clientName);
+					// Send the data structure to the server by casting it to a byte stream using const char* and passing the size of our data structure
+					peer->Send((const char*)&pack, sizeof(pack), HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
 
 					// Prompt for disconnect message (it doesn't actually disconnect yet, just sends a goodbye message)
 					printf("Disconnect? Y/N: " );
@@ -127,14 +143,11 @@ int main(void)
 					// if yes,
 					if ((str[0] == 'y') || (str[0] == 'Y'))
 					{
-						// new bitstream for the disconnect message
-						RakNet::BitStream bsOut2;
-						// write to our second custom message identifier
-						bsOut2.Write((RakNet::MessageID)ID_GAME_MESSAGE_PLAYER_DISCONNECTED);
-						// write the client name from before over to our second bitstream
-						bsOut2.Write(clientName);
-						// send it to the second message identifier
-						peer->Send(&bsOut2, HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
+						// Create data structure and initialize with our message identifier and message, in this case the user inputted client name
+						messagePack pack(ID_GAME_MESSAGE_PLAYER_DISCONNECTED, clientName);
+						// Send the data structure to the server by casting it to a byte stream using const char* and passing the size of our data structure
+						peer->Send((const char*)&pack, sizeof(pack), HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
+						
 					}
 				}
 				break;
@@ -174,22 +187,21 @@ int main(void)
 			// Custom message loop for player welcome
 			case ID_GAME_MESSAGE_PLAYER_CONNECTED:
 				{
-					RakNet::RakString rs;
-					RakNet::BitStream bsIn(packet->data, packet->length, false);
-					bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
-					bsIn.Read(rs);
-					printf("Welcome to the server, %s\n", rs.C_String());
+					// Cast packet to our data structure
+					messagePack* p = (messagePack*)packet->data;
+					// Print the message with the message string from the structure
+					printf("Welcome to the server, %s\n", p->msgString.c_str());
 				}
 				break;
 
 			// Custom message loop for player disconnect
 			case ID_GAME_MESSAGE_PLAYER_DISCONNECTED:
 			{
-				RakNet::RakString rs;
-				RakNet::BitStream bsIn(packet->data, packet->length, false);
-				bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
-				bsIn.Read(rs);
-				printf("Goodbye, %s\n", rs.C_String());
+				// Cast packet to our data structure
+				messagePack* p = (messagePack*)packet->data;
+				// Print the message with the message string from the structure
+				printf("Goodbye, %s\n", p->msgString.c_str());
+
 			}
 			break;
 
@@ -198,6 +210,7 @@ int main(void)
 				break;
 			}
 		}
+
 	}
 
 	// TODO - Add code body here
