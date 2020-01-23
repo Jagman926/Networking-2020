@@ -19,7 +19,8 @@ enum GameMessages
 	ID_GAME_MESSAGE_1 = ID_USER_PACKET_ENUM + 1,
 	// Custom message identifier for welcoming the player
 	ID_GAME_MESSAGE_PLAYER_CONNECTED,
-	ID_GAME_MESSAGE_PLAYER_DISCONNECTED
+	ID_GAME_MESSAGE_PLAYER_DISCONNECTED,
+	ID_MESSAGE_BROADCAST
 };
 
 
@@ -67,12 +68,16 @@ int main(void)
 				peer->Startup(1, &sd, 1);
 				isServer = false;
 
-				// Prompt for server port input
-				printf("Enter server port number\n");
-				// Read user input
-				fgets(str, 512, stdin);
-				// Set server port to inputed value in str
-				serverPort = strtol(str, NULL, 0);
+				//// Prompt for server port input
+				//printf("Enter server port number\n");
+				//// Read user input
+				//fgets(str, 512, stdin);
+				//// Set server port to inputed value in str
+				//serverPort = strtol(str, NULL, 0);
+
+				// fixed server port
+				serverPort = 1;
+
 				// Connected
 				connected = true;
 			}
@@ -85,12 +90,15 @@ int main(void)
 				// Set max clients to inputed value in str
 				maxClients = strtol(str, NULL, 0);
 
-				// Prompt for server port input
-				printf("Enter server port number\n");
-				// Read user input
-				fgets(str, 512, stdin);
+				//// Prompt for server port input
+				//printf("Enter server port number\n");
+				//// Read user input
+				//fgets(str, 512, stdin);
 				// Set server port to inputed value in str
-				serverPort = strtol(str, NULL, 0);
+				//serverPort = strtol(str, NULL, 0);
+
+				// fixed server port
+				serverPort = 1;
 
 				RakNet::SocketDescriptor sd(serverPort, 0);
 				peer->Startup(maxClients, &sd, 1);
@@ -204,6 +212,13 @@ int main(void)
 					messagePack* p = (messagePack*)packet->data;
 					// Print the message with the message string from the structure
 					printf("Welcome to the server, %s\n", p->msgString.c_str());
+
+					//TODO - Fix string stream
+					// Broadcast to other clients a user has connected to 
+					std::stringstream broadcastMsg;
+					broadcastMsg <<  "User " << p->msgString.c_str() << "has joined the chat!";
+					messagePack pack(ID_MESSAGE_BROADCAST, broadcastMsg.str());
+					peer->Send((const char*)& pack, sizeof(pack), HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, true);
 				}
 				break;
 
@@ -214,6 +229,17 @@ int main(void)
 					messagePack* p = (messagePack*)packet->data;
 					// Print the message with the message string from the structure
 					printf("Goodbye, %s\n", p->msgString.c_str());
+
+				}
+				break;
+
+				
+				case ID_MESSAGE_BROADCAST:
+				{
+					// Cast packet to our data structure
+					messagePack* p = (messagePack*)packet->data;
+					// Print the message with the message string from the structure
+					printf("%s\n", p->msgString.c_str());
 
 				}
 				break;
@@ -230,6 +256,7 @@ int main(void)
 		}
 
 	}
+
 
 	// TODO - Add code body here
 
