@@ -59,6 +59,7 @@ int main(void)
 	{
 		if (!connected)
 		{
+			// TO-DO: Create exit prompt to close the application
 			printf("(C) or (S)erver?\n");
 			fgets(str, 512, stdin);
 
