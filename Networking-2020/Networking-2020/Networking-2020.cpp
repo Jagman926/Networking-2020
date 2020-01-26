@@ -304,6 +304,8 @@ int main(void)
 					printf("Type your name: ");
 					// Read their input and store it
 					fgets(clientName, 512, stdin);
+					// Gets the index of any new line or carriage return and removes it from the char array
+					clientName[strcspn(clientName, "\r\n")] = 0;
 
 					// Create data structure and initialize with our message identifier and message, in this case the user inputted client name
 					messagePack pack(ID_GAME_MSG_PLAYER_CONNECTED, clientName);
@@ -383,7 +385,6 @@ int main(void)
 					//currentUsers++;
 
 					// Print the message with the message string from the structure
-					// TODO: Format to fix newline after name
 					printf(p->msgString.c_str());
 					printf(" has joined the chat!");
 					printf("\n");
