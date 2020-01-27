@@ -479,7 +479,7 @@ int main(void)
 				/* ------------------------------------------------------------------------------------------------------- */
 
 				// Outputs all messaging/command types
-				if (command == "help")
+				else if (command == "help")
 				{
 					printf("Commands\n/disconnect - Disconnect from the server\n/msg all: - Broadcast message to all users\n/msg [name]: - Sends a private message to the specified user\n");
 					if (isServer)
@@ -535,7 +535,7 @@ int main(void)
 				}
 				else
 				{
-					printf("%s is an invalid command! Type /help to see list of all commands\n", command);
+					printf("%s is an invalid command! Type /help to see list of all commands\n", command.c_str());
 				}
 
 			}
