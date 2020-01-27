@@ -15,14 +15,14 @@
 /* MASTER TODO */
 /*
 	------- MESSAGE STRUCTURE -------
-	- User information heading each message
+	? User information heading each message
 	x Can send and receive public messages (broadcast to all via host) or private messages (to/from a specific participant)
 
 	------- ADMIN STRUCTURE -------
     x Maintains user names and IP addresses of multiple connected users
-	- Relays and redirects all messages and events from all participants
-	- Broadcast messages to all or selected clients, public or private
-	- Displays all inbound and outbound messages, public or private, with the sender and receiver user names
+	? Relays and redirects all messages and events from all participants
+	x Broadcast messages to all or selected clients, public or ?private?
+	? Displays all inbound and outbound messages, public or private, with the sender and receiver user names
 	x On demand, print user names and IP addresses of all connected users to the host console
 
 	------- MESSAGE TYPES -------
@@ -32,11 +32,11 @@
 	------- USER INTERFACE -------
 	x Console clearly displays keyboard commands or shortcuts for user
 	- Console should refresh as needed
-	- Chat messages should always display the respective sender’s user name
-		- If the message was intended for a single user, only they should see it 
+	? Chat messages should always display the respective sender’s user name
+		? If the message was intended for a single user, only they should see it 
 		and have some indicator that they are the only one seeing the message, 
 		the host being the exception (they can see all messages, public or private)
-	- Chat messages should not be re-delivered to the sender
+	x Chat messages should not be re-delivered to the sender
 */
 
 enum GameMessages
