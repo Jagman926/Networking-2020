@@ -450,6 +450,7 @@ int main(void)
 			// get input	
 			msg = "";
 			printf("Input command: ");
+			// TODO: switch to fgets, make msg a char[]
 			std::cin >> msg;
 
 			// if command is being input; 47 = '/'
@@ -491,15 +492,17 @@ int main(void)
 				else if (command == "msg")
 				{
 					// string to hold the user name to send to
-					std::string user, message;
-
+					char user[512];
+					char message[512];
+					strcpy(user, msg.c_str());
+					char* parse;
 					// gets string from space to : 
-					user = msg.substr(msg.find(" "), msg.find(":"));
-
-					message = msg.substr(msg.find(": ") + 1);
+					// TODO: Figure out correct parsing
+					parse = strtok(user, "");
+					parse = strtok(parse, " ");
 
 					// Create our private message request
-					ChatMessageRequest messageRequest(ID_CHAT_MSG_REQUEST, user.c_str(), message.c_str());
+					ChatMessageRequest messageRequest(ID_CHAT_MSG_REQUEST, user, message);
 					// Send to host
 					peer->Send((const char*)&messageRequest, sizeof(messageRequest), HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
 				}
