@@ -32,7 +32,7 @@
 	------- USER INTERFACE -------
 	x Console clearly displays keyboard commands or shortcuts for user
 	- Console should refresh as needed
-	? Chat messages should always display the respective sender’s user name
+	? Chat messages should always display the respective senderï¿½s user name
 		? If the message was intended for a single user, only they should see it 
 		and have some indicator that they are the only one seeing the message, 
 		the host being the exception (they can see all messages, public or private)
@@ -479,102 +479,107 @@ int main(void)
 				}
 			}
 
-			///* ------------------------------------------------------------------------------------------------------- */
-			///*                                            USER INPUT COMMANDS AND MESSAGES                             */
-			///* ------------------------------------------------------------------------------------------------------- */
-			//
-			//// DAN
-			//// get input	
-			//msg = "";
-			//printf("Input command: ");
-			//std::cin >> msg;
-			//
-			//// if command is being input; 47 = '/'
-			//if (msg.at(0) == '/')
-			//{
-			//	// string to hold our command that we will split up
-			//	std::string command;
-			//
-			//	// gets string from after / to first space
-			//	command = msg.substr(1, msg.find(' '));
-			//
-			//	/* ------------------------------------------------------------------------------------------------------- */
-			//	/*                                            SERVER ONLY COMMANDS                                         */
-			//	/* ------------------------------------------------------------------------------------------------------- */
-			//
-			//	// Prints out user name and IP of all connected users to host console, including host
-			//	if (isServer && command == "users")
-			//	{
-			//		for (int i = 0; i < currentUsers; i++)
-			//		{
-			//			printf("User: %s | Address: %s\n", users[i].userName, users[i].systemAddress.c_str());
-			//		}
-			//	}
-			//
-			//	/* ------------------------------------------------------------------------------------------------------- */
-			//	/*                                            USER COMMANDS                                                */
-			//	/* ------------------------------------------------------------------------------------------------------- */
-			//
-			//	// Outputs all messaging/command types
-			//	else if (command == "help")
-			//	{
-			//		printf("Commands\n/disconnect - Disconnect from the server\n/msg all: - Broadcast message to all users\n/msg [name]: - Sends a private message to the specified user\n");
-			//		if (isServer)
-			//		{
-			//			printf("\nAdmin Commands\n/ users - Display all usernames & IP\n");
-			//		}
-			//
-			//	}
-			//	else if (command == "msg")
-			//	{
-			//		// string to hold the user name to send to
-			//		std::string user, message;
-			//
-			//		// gets string from space to : 
-			//		user = msg.substr(msg.find(" "), msg.find(":"));
-			//
-			//		message = msg.substr(msg.find(": ") + 1);
-			//
-			//		// Create our private message request
-			//		ChatMessageRequest messageRequest(ID_CHAT_MSG_REQUEST, user.c_str(), message.c_str());
-			//		// Send to host
-			//		peer->Send((const char*)&messageRequest, sizeof(messageRequest), HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
-			//	}
-			//
-			//	else if (command == "all")
-			//	{
-			//		// string to hold the user name to send to
-			//		std::string  message;
-			//
-			//		message = msg.substr(msg.find("all") + 1);
-			//
-			//		// Create our private message request
-			//		ChatMessageRequest messageRequest(ID_CHAT_MSG_REQUEST, "all", message.c_str());
-			//		// Send to host
-			//		peer->Send((const char*)&messageRequest, sizeof(messageRequest), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)hostSystemAddress.c_str(), false);
-			//	}
-			//	else if (command == "disconnect")
-			//	{
-			//		// Prompt for disconnect message
-			//		printf("Are you sure? Y/N: ");
-			//		// Get input
-			//		fgets(str, 512, stdin);
-			//		// if yes,
-			//		if ((str[0] == 'y') || (str[0] == 'Y'))
-			//		{
-			//			// Create data structure and initialize with our message identifier and message, in this case the user inputted client name
-			//			messagePack pack(ID_GAME_MSG_PLAYER_DISCONNECTED, clientName);
-			//			// Send the data structure to the server by casting it to a byte stream using const char* and passing the size of our data structure
-			//			peer->Send((const char*)&pack, sizeof(pack), HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
-			//			// Set to disconnect from server after loop is finished
-			//			connected = false;
-			//		}
-			//	}
-			//	else
-			//	{
-			//		printf("%s is an invalid command! Type /help to see list of all commands\n", command.c_str());
-			//	}
-			//}
+
+			/* ------------------------------------------------------------------------------------------------------- */
+			/*                                            USER INPUT COMMANDS AND MESSAGES                             */
+			/* ------------------------------------------------------------------------------------------------------- */
+
+			// DAN
+			// get input	
+			msg = "";
+			printf("Input command: ");
+			// TODO: switch to fgets, make msg a char[]
+			std::cin >> msg;
+
+			// if command is being input; 47 = '/'
+			if (msg.at(0) == '/')
+			{
+				// string to hold our command that we will split up
+				std::string command;
+
+				// gets string from after / to first space
+				command = msg.substr(1, msg.find(' '));
+
+				/* ------------------------------------------------------------------------------------------------------- */
+				/*                                            SERVER ONLY COMMANDS                                         */
+				/* ------------------------------------------------------------------------------------------------------- */
+
+				// Prints out user name and IP of all connected users to host console, including host
+				if (isServer && command == "users")
+				{
+					for (int i = 0; i < currentUsers; i++)
+					{
+						printf("User: %s | Address: %s\n", users[i].userName, users[i].systemAddress.c_str());
+					}
+				}
+
+				/* ------------------------------------------------------------------------------------------------------- */
+				/*                                            USER COMMANDS                                                */
+				/* ------------------------------------------------------------------------------------------------------- */
+
+				// Outputs all messaging/command types
+				else if (command == "help")
+				{
+					printf("Commands\n/disconnect - Disconnect from the server\n/msg all: - Broadcast message to all users\n/msg [name]: - Sends a private message to the specified user\n");
+					if (isServer)
+					{
+						printf("\nAdmin Commands\n/ users - Display all usernames & IP\n");
+					}
+
+				}
+				else if (command == "msg")
+				{
+					// string to hold the user name to send to
+					char user[512];
+					char message[512];
+					strcpy(user, msg.c_str());
+					char* parse;
+					// gets string from space to : 
+					// TODO: Figure out correct parsing
+					parse = strtok(user, "");
+					parse = strtok(parse, " ");
+
+					// Create our private message request
+					ChatMessageRequest messageRequest(ID_CHAT_MSG_REQUEST, user, message);
+					// Send to host
+					peer->Send((const char*)&messageRequest, sizeof(messageRequest), HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
+				}
+
+				else if (command == "all")
+				{
+					// string to hold the user name to send to
+					std::string  message;
+
+					message = msg.substr(msg.find("all") + 1);
+
+					// Create our private message request
+					ChatMessageRequest messageRequest(ID_CHAT_MSG_REQUEST, "all", message.c_str());
+					// Send to host
+					peer->Send((const char*)&messageRequest, sizeof(messageRequest), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)hostSystemAddress.c_str(), false);
+				}
+				else if (command == "disconnect")
+				{
+					// Prompt for disconnect message
+					printf("Are you sure? Y/N: ");
+					// Get input
+					fgets(str, 512, stdin);
+					// if yes,
+					if ((str[0] == 'y') || (str[0] == 'Y'))
+					{
+						// Create data structure and initialize with our message identifier and message, in this case the user inputted client name
+						messagePack pack(ID_GAME_MSG_PLAYER_DISCONNECTED, clientName);
+						// Send the data structure to the server by casting it to a byte stream using const char* and passing the size of our data structure
+						peer->Send((const char*)&pack, sizeof(pack), HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
+						// Set to disconnect from server after loop is finished
+						connected = false;
+					}
+				}
+				else
+				{
+					printf("%s is an invalid command! Type /help to see list of all commands\n", command.c_str());
+				}
+
+			}
 
 			// If set to disconnect, shutdown connection between server
 			if(!connected)
