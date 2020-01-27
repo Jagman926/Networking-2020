@@ -380,7 +380,7 @@ int main(void)
 					printf("Goodbye, %s\n", p->msgText);
 				}
 				break;
-
+				// DAN
 				case ID_CHAT_MSG_REQUEST:
 				{
 					// cast packet to data
@@ -410,7 +410,7 @@ int main(void)
 					peer->Send((const char*)&msgDelivery, sizeof(msgDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, isBroadcast);
 				}
 				break;
-
+				// DAN
 				case ID_CHAT_MSG_DELIVERY:
 				{
 					// cast packet to data
@@ -445,6 +445,8 @@ int main(void)
 			/* ------------------------------------------------------------------------------------------------------- */
 			/*                                            USER INPUT COMMANDS AND MESSAGES                             */
 			/* ------------------------------------------------------------------------------------------------------- */
+
+			// DAN
 			// get input	
 			msg = "";
 			printf("Input command: ");
