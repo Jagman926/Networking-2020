@@ -1,0 +1,48 @@
+// window idles // app middle project, win main 
+// initialize app
+HANDLE wndHandle[1];
+status = a3appStartSingleInstance(winHandle,winName);
+
+// at end
+a3appStopStingleWindow(wndHandle);
+
+// a3demoTestNetworking_send (a3_DemoState* demoState)
+{
+   // do networking output only
+demoState->peer
+}
+
+// rak peer interface
+GetConnectionList
+GetIndexFromSystemList // searches for ips
+
+// struct RemoteInformation
+{
+
+	char remoteName[32]; // send index from get index from system list
+	int blahOtherData;
+
+};
+RemoteInformation remote[20];
+
+// send; if system identifier is set and broadcast off, goes to one person only
+// if system identifier is set and broadcast on, sends to everyone except specified address
+// special identifier; UNASSIGNED SYSTEM ADDRESS is nobody; broadcast true sends to EVERYONE!
+
+
+// animal 3d input
+keycharpress and hold, how to get single input
+// key processing that doesnt separate send and recieve phases
+switch asciikey
+case 'b'
+break
+// check certain key in demo test input
+if demostate keyboard key key ['b']
+
+OR 
+a3keyboardGetKeyState demostate keyboard a3key_B > 0
+
+
+
+
+
