@@ -79,13 +79,12 @@ struct a3_DemoState
 
 	// pointer to fast trig table
 	a3f32 trigTable[4096 * 4];
+
+	// NETWORKING
+	RakNet::RakPeerInterface* peer;
+	a3_Timer renderTimer[1];
 };
 //-----------------------------------------------------------------------------
-
-// TO:DO NETWORKING STUFF
-
-a3_Timer renderTimer[1];
-RakNet::RakPeerInterface* peer;
 
 void a3DemoTestInput(a3_DemoState const* demoState) 
 {
@@ -206,18 +205,11 @@ A3DYLIBSYMBOL a3_DemoState *a3demoCB_load(a3_DemoState *demoState, a3boolean hot
 	const a3ui32 stateSize = a3demo_getPersistentStateSize();
 	const a3ui32 trigSamplesPerDegree = 4;
 	
-	// TO-DO Init peer on load
-	/*
-	if (!demoState->peer)
-	{
-		demoState->peer = RakNet::RakPeerInterface::GetInstance();
-		if (demoState->peer)
-	}
-	*/
-
 	// do any re-allocation tasks
 	if (demoState && hotbuild)
 	{
+		/*
+
 		const a3ui32 stateSize = a3demo_getPersistentStateSize();
 		a3_DemoState copy = *demoState;
 
@@ -228,10 +220,11 @@ A3DYLIBSYMBOL a3_DemoState *a3demoCB_load(a3_DemoState *demoState, a3boolean hot
 		*demoState = copy;
 
 		a3trigInitSetTables(trigSamplesPerDegree, demoState->trigTable);
-		/*
+		
 		// call refresh to re-link pointers in case demo state address changed
 		a3demo_refresh(demoState);
 		a3demo_initSceneRefresh(demoState);
+
 		*/
 	}
 
@@ -242,44 +235,57 @@ A3DYLIBSYMBOL a3_DemoState *a3demoCB_load(a3_DemoState *demoState, a3boolean hot
 		// stack object will be deleted at the end of the function
 		// good idea to set the whole block of memory to zero
 		demoState = (a3_DemoState *)malloc(stateSize);
-		memset(demoState, 0, stateSize);
+		
+		if (demoState)
+		{
+			memset(demoState, 0, stateSize);
 
-		// set up trig table (A3DM)
-		a3trigInit(trigSamplesPerDegree, demoState->trigTable);
+			// set up trig table (A3DM)
+			a3trigInit(trigSamplesPerDegree, demoState->trigTable);
 
-		/*
-		// initialize state variables
-		// e.g. timer, thread, etc.
-		a3timerSet(demoState->renderTimer, 30.0);
-		a3timerStart(demoState->renderTimer);
-		*/
+			// initialize state variables
+			// e.g. timer, thread, etc.
+			a3timerSet(demoState->renderTimer, 30.0);
+			a3timerStart(demoState->renderTimer);
 
-		// text
-		a3demo_initializeText(demoState->text);
-		demoState->textInit = 1;
-		demoState->textMode = 1;
-		demoState->textModeCount = 3;	// 0=off, 1=controls, 2=data
+			// text
+			a3demo_initializeText(demoState->text);
+			demoState->textInit = 1;
+			demoState->textMode = 1;
+			demoState->textModeCount = 3;	// 0=off, 1=controls, 2=data
 
-		/*
-		// enable asset streaming between loads
-	//	demoState->streaming = 1;
+			// peer instance
+			// TO-DO Init peer on load
+			if (!demoState->peer)
+			{
+				demoState->peer = RakNet::RakPeerInterface::GetInstance();
+				if (demoState->peer)
+				{
+					// TO-DO
+				}
+			}
 
-		// create directory for data
-		a3fileStreamMakeDirectory("./data");
+			/*
+			// enable asset streaming between loads
+		//	demoState->streaming = 1;
+
+			// create directory for data
+			a3fileStreamMakeDirectory("./data");
 
 
-		// set default GL state
-		a3demo_setDefaultGraphicsState();
+			// set default GL state
+			a3demo_setDefaultGraphicsState();
 
-		// geometry
-		a3demo_loadGeometry(demoState);
+			// geometry
+			a3demo_loadGeometry(demoState);
 
-		// shaders
-		a3demo_loadShaders(demoState);
+			// shaders
+			a3demo_loadShaders(demoState);
 
-		// scene objects
-		a3demo_initScene(demoState);
-		*/
+			// scene objects
+			a3demo_initScene(demoState);
+			*/
+		}
 	}
 
 	// return persistent state pointer
@@ -303,14 +309,12 @@ A3DYLIBSYMBOL a3_DemoState *a3demoCB_unload(a3_DemoState *demoState, a3boolean h
 		// free fixed objects
 		a3textRelease(demoState->text);
 
-		// TO-DO unload peer when unloading
-		/*
+		// unload peer when unloading
 		if (demoState->peer)
 		{
 			RakNet::RakPeerInterface::DestroyInstance(demoState->peer);
 			demoState->peer = 0;
 		}
-		*/
 
 		/*
 		// free graphics objects
@@ -349,27 +353,23 @@ A3DYLIBSYMBOL a3i32 a3demoCB_idle(a3_DemoState *demoState)
 	// perform any idle tasks, such as rendering
 	if (!demoState->exitFlag)
 	{
-		// update input
-		a3mouseUpdate(demoState->mouse);
-		a3keyboardUpdate(demoState->keyboard);
-		a3XboxControlUpdate(demoState->xcontrol);
-
-		a3DemoTestRender(demoState);
-
-		/*
 		if (a3timerUpdate(demoState->renderTimer) > 0)
 		{
-
 			// render timer ticked, update demo state and draw
-			a3demo_update(demoState, demoState->renderTimer->secondsPerTick);
-			a3demo_input(demoState, demoState->renderTimer->secondsPerTick);
-			a3demo_render(demoState);
+			//a3demo_update(demoState, demoState->renderTimer->secondsPerTick);
+			//a3demo_input(demoState, demoState->renderTimer->secondsPerTick);
+			//a3demo_render(demoState);
+
+			// update input
+			a3mouseUpdate(demoState->mouse);
+			a3keyboardUpdate(demoState->keyboard);
+			a3XboxControlUpdate(demoState->xcontrol);
+
+			a3DemoTestRender(demoState);
 
 			// render occurred this idle: return +1
 			return +1;
 		}
-		*/
-		a3DemoTestRender(demoState);
 
 		// nothing happened this idle: return 0
 		return 0;
