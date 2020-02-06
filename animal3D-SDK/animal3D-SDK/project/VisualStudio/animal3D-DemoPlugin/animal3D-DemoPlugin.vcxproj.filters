@@ -61,6 +61,12 @@
     <Filter Include="Source Files\common\A3_DEMO\a3_Networking">
       <UniqueIdentifier>{7cd1e83b-1cfa-4949-86a4-d5e0bf1c265a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\common\A3_DEMO\a3_Networking\a3_NetApp">
+      <UniqueIdentifier>{98d077e6-fe0d-478b-aba7-f1ff6dc44f13}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\A3_DEMO\_utilities\a3_NetApp">
+      <UniqueIdentifier>{b39fbb7a-8e00-4303-b595-eafde67f3572}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="_src_win\main_dll.c">
@@ -105,6 +111,18 @@
     <ClCompile Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_Networking_gs_battleship.c">
       <Filter>Source Files\common\A3_DEMO\a3_Networking</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_NetApp\a3_NetApp_Client.cpp">
+      <Filter>Source Files\common\A3_DEMO\a3_Networking\a3_NetApp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_NetApp\a3_NetApp_ServerOnTopOfClient.cpp">
+      <Filter>Source Files\common\A3_DEMO\a3_Networking\a3_NetApp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_NetApp\a3_NetApp_Server.cpp">
+      <Filter>Source Files\common\A3_DEMO\a3_Networking\a3_NetApp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\_utilities\a3_NetApp\a3_NetApp_Message.cpp">
+      <Filter>Source Files\common\A3_DEMO\a3_Networking\a3_NetApp</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\source\animal3D-DemoPlugin\a3_dylib_config_export.h">
@@ -121,6 +139,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\_utilities\a3_DemoShaderProgram.h">
       <Filter>Header Files\A3_DEMO\_utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\_utilities\a3_NetApp\a3_MessageIdentifiers.h">
+      <Filter>Header Files\A3_DEMO\_utilities\a3_NetApp</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
