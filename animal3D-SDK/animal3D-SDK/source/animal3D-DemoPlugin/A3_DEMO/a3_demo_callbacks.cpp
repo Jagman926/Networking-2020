@@ -354,6 +354,8 @@ A3DYLIBSYMBOL a3i32 a3demoCB_idle(a3_DemoState *demoState)
 		a3keyboardUpdate(demoState->keyboard);
 		a3XboxControlUpdate(demoState->xcontrol);
 
+		a3DemoTestRender(demoState);
+
 		/*
 		if (a3timerUpdate(demoState->renderTimer) > 0)
 		{
