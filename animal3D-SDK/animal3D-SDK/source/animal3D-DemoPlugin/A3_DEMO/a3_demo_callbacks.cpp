@@ -86,6 +86,7 @@ struct a3_DemoState
 };
 //-----------------------------------------------------------------------------
 
+
 void a3DemoTestInput(a3_DemoState const* demoState) 
 {
 
@@ -101,12 +102,7 @@ void a3DemoTestNetworking_send(a3_DemoState const* demoState)
 
 }
 
-void a3DemoTestUpdate(a3_DemoState const* demoState) 
-{
-
-}
-
-void a3DemoTestRender(a3_DemoState const* demoState) 
+void a3DemoTestRender(a3_DemoState const* demoState)
 {
 	// clear color
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -115,6 +111,11 @@ void a3DemoTestRender(a3_DemoState const* demoState)
 	a3textDraw(demoState->text, 0, 0, 0, 1, 1, 1, 1, "%l.4");
 }
 
+void a3DemoTestUpdate(a3_DemoState const* demoState) 
+{
+	a3DemoTestInput(demoState);
+	a3DemoTestRender(demoState);
+}
 
 //-----------------------------------------------------------------------------
 // miscellaneous functions
@@ -365,7 +366,8 @@ A3DYLIBSYMBOL a3i32 a3demoCB_idle(a3_DemoState *demoState)
 			a3keyboardUpdate(demoState->keyboard);
 			a3XboxControlUpdate(demoState->xcontrol);
 
-			a3DemoTestRender(demoState);
+			// update
+			a3DemoTestUpdate(demoState);
 
 			// render occurred this idle: return +1
 			return +1;
