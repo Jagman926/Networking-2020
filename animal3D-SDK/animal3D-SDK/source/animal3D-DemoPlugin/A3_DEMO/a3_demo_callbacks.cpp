@@ -86,6 +86,10 @@ struct a3_DemoState
 };
 //-----------------------------------------------------------------------------
 
+// Text buffer for typing
+char inputBuffer [512];
+int bufferLoc = 0;
+
 
 void a3DemoTestInput(a3_DemoState const* demoState) 
 {
@@ -108,7 +112,7 @@ void a3DemoTestRender(a3_DemoState const* demoState)
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	// draw some text (Just look at a3_DemoState_idle-render.c (~170))
-	a3textDraw(demoState->text, 0, 0, 0, 1, 1, 1, 1, "%l.4");
+	a3textDraw(demoState->text, 0, 0, 0, 1, 1, 1, 1, inputBuffer);
 }
 
 void a3DemoTestUpdate(a3_DemoState const* demoState) 
@@ -486,6 +490,35 @@ A3DYLIBSYMBOL void a3demoCB_keyCharPress(a3_DemoState *demoState, a3i32 asciiKey
 	// persistent state update
 	a3keyboardSetStateASCII(demoState->keyboard, (a3byte)asciiKey);
 
+	// switch statement for keyboard input
+	// Ascii table for reference: http://www.asciitable.com/
+	switch (asciiKey)
+	{
+	// Backspace
+	case 8:
+		if (bufferLoc != 0)
+		{
+			bufferLoc--;
+			inputBuffer[bufferLoc] = 0;
+		}
+		break;
+
+	// Carriage return (Enter)
+	case 13:
+		// empty input buffer
+		memset(inputBuffer, 0, sizeof inputBuffer);
+		// reset input buffer current location
+		bufferLoc = 0;
+		break;
+
+	// Remaining input
+	default:
+		// if there is input, add it to input buffer
+		inputBuffer[bufferLoc] = asciiKey;
+		bufferLoc++;
+		break;
+	}
+
 	/*
 	// handle special cases immediately
 	switch (asciiKey)
@@ -590,6 +623,36 @@ A3DYLIBSYMBOL void a3demoCB_keyCharHold(a3_DemoState *demoState, a3i32 asciiKey)
 {
 	// persistent state update
 	a3keyboardSetStateASCII(demoState->keyboard, (a3byte)asciiKey);
+
+	// ** Same switch as keyCharPress, but used for when key is held
+	// switch statement for keyboard input
+	// Ascii table for reference: http://www.asciitable.com/
+	switch (asciiKey)
+	{
+	// Backspace
+	case 8:
+		if (bufferLoc != 0)
+		{
+			bufferLoc--;
+			inputBuffer[bufferLoc] = 0;
+		}
+		break;
+
+	// Carriage return (Enter)
+	case 13:
+		// empty input buffer
+		memset(inputBuffer, 0, sizeof inputBuffer);
+		// reset input buffer current location
+		bufferLoc = 0;
+		break;
+
+	// Remaining input
+	default:
+		// if there is input, add it to input buffer
+		inputBuffer[bufferLoc] = asciiKey;
+		bufferLoc++;
+		break;
+	}
 
 	/*
 	// callback for current mode
