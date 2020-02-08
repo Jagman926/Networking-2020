@@ -27,6 +27,7 @@
 	********************************************
 */
 
+// Animal Includes
 
 #include "a3_dylib_config_export.h"
 
@@ -41,7 +42,6 @@
 #include "RakNet/RakPeerInterface.h"
 
 #include <GL/glew.h>
-
 
 struct a3_DemoState
 {
@@ -86,10 +86,29 @@ struct a3_DemoState
 };
 //-----------------------------------------------------------------------------
 
-// Text buffer for typing
-char inputBuffer [512];
-int bufferLoc = 0;
 
+// Peer User Variables --------------------------------------------------------
+
+char username[512] = "Josh";
+
+//-----------------------------------------------------------------------------
+
+// Text Rendering Variables ---------------------------------------------------
+
+// Input container
+char inputBuffer [512];
+a3i32 bufferLoc = 0;
+
+// Chat container
+char chatBuffer[512][512];
+a3i32 chatLoc = 0;
+a3i32 chatOffset = 0;
+const a3i32 CHAT_VIEW_MAX = 22;
+
+// Half window size information
+a3f32 halfWindowWidth, halfWindowHeight;
+
+//-----------------------------------------------------------------------------
 
 void a3DemoTestInput(a3_DemoState const* demoState) 
 {
@@ -106,13 +125,35 @@ void a3DemoTestNetworking_send(a3_DemoState const* demoState)
 
 }
 
+void a3DemoRenderTextChat(a3_DemoState const* demostate)
+{
+	// amount to offset text as each line is rendered
+	a3f32 textAlign = -0.98f;
+	a3f32 textOffset = 1.00f;
+	a3f32 textDepth = -1.00f;
+	const a3f32 textOffsetDelta = -0.08f;
+
+	// Renders chat log
+	int i;
+	for (i = chatOffset; i < chatOffset + CHAT_VIEW_MAX; i++)
+	{
+		if (i >= 0 && i < chatLoc)
+		{
+			a3textDraw(demostate->text, textAlign, textOffset += textOffsetDelta, textDepth, 1, 1, 1, 1, "%s: %s", username, chatBuffer[i]);
+		}
+	}
+}
+
 void a3DemoTestRender(a3_DemoState const* demoState)
 {
 	// clear color
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	// draw some text (Just look at a3_DemoState_idle-render.c (~170))
-	a3textDraw(demoState->text, 0, 0, 0, 1, 1, 1, 1, inputBuffer);
+	a3DemoRenderTextChat(demoState);
+
+	// Renders user current typing area
+	a3textDraw(demoState->text, -0.98f, -0.95f, -1.0f, 1, 1, 1, 1, inputBuffer);
 }
 
 void a3DemoTestUpdate(a3_DemoState const* demoState) 
@@ -437,6 +478,10 @@ A3DYLIBSYMBOL void a3demoCB_windowResize(a3_DemoState *demoState, a3i32 newWindo
 	demoState->frameAspect = frameAspect;
 	demoState->frameBorder = frameBorder;
 
+	// window half sizes
+	halfWindowWidth = demoState->windowWidth * 0.5f;
+	halfWindowHeight = demoState->windowHeight * 0.5f;
+
 	// framebuffers should be initialized or re-initialized here 
 	//	since they are likely dependent on the window size
 
@@ -505,6 +550,15 @@ A3DYLIBSYMBOL void a3demoCB_keyCharPress(a3_DemoState *demoState, a3i32 asciiKey
 
 	// Carriage return (Enter)
 	case 13:
+		// add message to chat buffer
+		strncpy(chatBuffer[chatLoc], inputBuffer, 512);
+		// increment current chat buffer
+		chatLoc++;
+		// ajust chat view location
+		chatOffset = max(0, chatLoc - CHAT_VIEW_MAX);
+
+		// TO-DO Parse input and do whatever
+
 		// empty input buffer
 		memset(inputBuffer, 0, sizeof inputBuffer);
 		// reset input buffer current location
@@ -638,14 +692,6 @@ A3DYLIBSYMBOL void a3demoCB_keyCharHold(a3_DemoState *demoState, a3i32 asciiKey)
 		}
 		break;
 
-	// Carriage return (Enter)
-	case 13:
-		// empty input buffer
-		memset(inputBuffer, 0, sizeof inputBuffer);
-		// reset input buffer current location
-		bufferLoc = 0;
-		break;
-
 	// Remaining input
 	default:
 		// if there is input, add it to input buffer
@@ -699,6 +745,9 @@ A3DYLIBSYMBOL void a3demoCB_mouseWheel(a3_DemoState *demoState, a3i32 delta, a3i
 	// persistent state update
 	a3mouseSetStateWheel(demoState->mouse, (a3_MouseWheelState)delta);
 	a3mouseSetPosition(demoState->mouse, cursorX, cursorY);
+
+	// set view location if scrolling
+	chatOffset = max(0, min(chatLoc - CHAT_VIEW_MAX, chatOffset + (-1 * delta)));
 
 	/*
 	switch (demoState->demoMode)
