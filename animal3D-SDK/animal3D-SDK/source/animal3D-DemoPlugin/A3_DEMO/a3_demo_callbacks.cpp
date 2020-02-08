@@ -27,15 +27,140 @@
 	********************************************
 */
 
+// Animal Includes
 
 #include "a3_dylib_config_export.h"
-#include "a3_DemoState.h"
-
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "animal3D/animal3D.h"
+#include "animal3D-A3DG/animal3D-A3DG.h"
+
+#include "animal3D-A3DM/animal3D-A3DM.h"
+#include "RakNet/RakPeerInterface.h"
+
+#include <GL/glew.h>
+
+struct a3_DemoState
+{
+	//---------------------------------------------------------------------
+	// general variables pertinent to the state
+
+	// terminate key pressed
+	a3i32 exitFlag;
+
+	// global vertical axis: Z = 0, Y = 1
+	a3i32 verticalAxis;
+
+	// asset streaming between loads enabled (careful!)
+	a3i32 streaming;
+
+	// window and full-frame dimensions
+	a3ui32 windowWidth, windowHeight;
+	a3real windowWidthInv, windowHeightInv, windowAspect;
+	a3ui32 frameWidth, frameHeight;
+	a3real frameWidthInv, frameHeightInv, frameAspect;
+	a3i32 frameBorder;
+
+
+	//---------------------------------------------------------------------
+	// objects that have known or fixed instance count in the whole demo
+
+	// text renderer
+	a3i32 textInit, textMode, textModeCount;
+	a3_TextRenderer text[1];
+
+	// input
+	a3_MouseInput mouse[1];
+	a3_KeyboardInput keyboard[1];
+	a3_XboxControllerInput xcontrol[4];
+
+	// pointer to fast trig table
+	a3f32 trigTable[4096 * 4];
+
+	// NETWORKING
+	RakNet::RakPeerInterface* peer;
+	a3_Timer renderTimer[1];
+};
+//-----------------------------------------------------------------------------
+
+
+// Peer User Variables --------------------------------------------------------
+
+char username[512] = "Josh";
+
+//-----------------------------------------------------------------------------
+
+// Text Rendering Variables ---------------------------------------------------
+
+// Input container
+char inputBuffer [512];
+a3i32 bufferLoc = 0;
+
+// Chat container
+char chatBuffer[512][512];
+a3i32 chatLoc = 0;
+a3i32 chatOffset = 0;
+const a3i32 CHAT_VIEW_MAX = 22;
+
+// Half window size information
+a3f32 halfWindowWidth, halfWindowHeight;
+
+//-----------------------------------------------------------------------------
+
+void a3DemoTestInput(a3_DemoState const* demoState) 
+{
+
+}
+
+void a3DemoTestNetworking_recieve(a3_DemoState const* demoState) 
+{
+
+}
+
+void a3DemoTestNetworking_send(a3_DemoState const* demoState) 
+{
+
+}
+
+void a3DemoRenderTextChat(a3_DemoState const* demostate)
+{
+	// amount to offset text as each line is rendered
+	a3f32 textAlign = -0.98f;
+	a3f32 textOffset = 1.00f;
+	a3f32 textDepth = -1.00f;
+	const a3f32 textOffsetDelta = -0.08f;
+
+	// Renders chat log
+	int i;
+	for (i = chatOffset; i < chatOffset + CHAT_VIEW_MAX; i++)
+	{
+		if (i >= 0 && i < chatLoc)
+		{
+			a3textDraw(demostate->text, textAlign, textOffset += textOffsetDelta, textDepth, 1, 1, 1, 1, "%s: %s", username, chatBuffer[i]);
+		}
+	}
+}
+
+void a3DemoTestRender(a3_DemoState const* demoState)
+{
+	// clear color
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	// draw some text (Just look at a3_DemoState_idle-render.c (~170))
+	a3DemoRenderTextChat(demoState);
+
+	// Renders user current typing area
+	a3textDraw(demoState->text, -0.98f, -0.95f, -1.0f, 1, 1, 1, 1, inputBuffer);
+}
+
+void a3DemoTestUpdate(a3_DemoState const* demoState) 
+{
+	a3DemoTestInput(demoState);
+	a3DemoTestRender(demoState);
+}
 
 //-----------------------------------------------------------------------------
 // miscellaneous functions
@@ -67,49 +192,12 @@ inline void a3demoCB_keyCharPress_main(a3_DemoState *demoState, a3i32 asciiKey,
 	const a3ui32 demoSubMode, const a3ui32 demoOutput,
 	const a3ui32 demoSubModeCount, const a3ui32 demoOutputCount)
 {
-	switch (asciiKey)
-	{
-		// sub-modes
-	case '>':
-		break;
-	case '<':
-		break;
 
-		// toggle active camera
-//	case 'v':
-//		demoState->activeCamera = (demoState->activeCamera + 1) % demoStateMaxCount_cameraObject;
-//		break;
-//	case 'c':
-//		demoState->activeCamera = (demoState->activeCamera - 1 + demoStateMaxCount_cameraObject) % demoStateMaxCount_cameraObject;
-//		break;
-
-		// toggle skybox
-	case 'b':
-		demoState->displaySkybox = 1 - demoState->displaySkybox;
-		break;
-
-		// toggle hidden volumes
-	case 'h':
-		demoState->displayHiddenVolumes = 1 - demoState->displayHiddenVolumes;
-		break;
-
-		// toggle pipeline overlay
-	case 'o':
-		demoState->displayPipeline = 1 - demoState->displayPipeline;
-		break;
-	}
 }
 
 inline void a3demoCB_keyCharHold_main(a3_DemoState *demoState, a3i32 asciiKey)
 {
-	// handle special cases immediately
-	switch (asciiKey)
-	{
-	case 'l':
-		break;
-	case 'L':
-		break;
-	}
+
 }
 
 
@@ -166,6 +254,8 @@ A3DYLIBSYMBOL a3_DemoState *a3demoCB_load(a3_DemoState *demoState, a3boolean hot
 	// do any re-allocation tasks
 	if (demoState && hotbuild)
 	{
+		/*
+
 		const a3ui32 stateSize = a3demo_getPersistentStateSize();
 		a3_DemoState copy = *demoState;
 
@@ -175,10 +265,13 @@ A3DYLIBSYMBOL a3_DemoState *a3demoCB_load(a3_DemoState *demoState, a3boolean hot
 		memset(demoState, 0, stateSize);
 		*demoState = copy;
 
+		a3trigInitSetTables(trigSamplesPerDegree, demoState->trigTable);
+		
 		// call refresh to re-link pointers in case demo state address changed
 		a3demo_refresh(demoState);
 		a3demo_initSceneRefresh(demoState);
-		a3trigInitSetTables(trigSamplesPerDegree, demoState->trigTable);
+
+		*/
 	}
 
 	// do any initial allocation tasks
@@ -188,42 +281,57 @@ A3DYLIBSYMBOL a3_DemoState *a3demoCB_load(a3_DemoState *demoState, a3boolean hot
 		// stack object will be deleted at the end of the function
 		// good idea to set the whole block of memory to zero
 		demoState = (a3_DemoState *)malloc(stateSize);
-		memset(demoState, 0, stateSize);
+		
+		if (demoState)
+		{
+			memset(demoState, 0, stateSize);
 
-		// set up trig table (A3DM)
-		a3trigInit(trigSamplesPerDegree, demoState->trigTable);
+			// set up trig table (A3DM)
+			a3trigInit(trigSamplesPerDegree, demoState->trigTable);
 
-		// initialize state variables
-		// e.g. timer, thread, etc.
-		a3timerSet(demoState->renderTimer, 30.0);
-		a3timerStart(demoState->renderTimer);
+			// initialize state variables
+			// e.g. timer, thread, etc.
+			a3timerSet(demoState->renderTimer, 30.0);
+			a3timerStart(demoState->renderTimer);
 
-		// text
-		a3demo_initializeText(demoState->text);
-		demoState->textInit = 1;
-		demoState->textMode = 1;
-		demoState->textModeCount = 3;	// 0=off, 1=controls, 2=data
+			// text
+			a3demo_initializeText(demoState->text);
+			demoState->textInit = 1;
+			demoState->textMode = 1;
+			demoState->textModeCount = 3;	// 0=off, 1=controls, 2=data
+
+			// peer instance
+			// TO-DO Init peer on load
+			if (!demoState->peer)
+			{
+				demoState->peer = RakNet::RakPeerInterface::GetInstance();
+				if (demoState->peer)
+				{
+					// TO-DO
+				}
+			}
+
+			/*
+			// enable asset streaming between loads
+		//	demoState->streaming = 1;
+
+			// create directory for data
+			a3fileStreamMakeDirectory("./data");
 
 
-		// enable asset streaming between loads
-	//	demoState->streaming = 1;
+			// set default GL state
+			a3demo_setDefaultGraphicsState();
 
+			// geometry
+			a3demo_loadGeometry(demoState);
 
-		// create directory for data
-		a3fileStreamMakeDirectory("./data");
+			// shaders
+			a3demo_loadShaders(demoState);
 
-
-		// set default GL state
-		a3demo_setDefaultGraphicsState();
-
-		// geometry
-		a3demo_loadGeometry(demoState);
-
-		// shaders
-		a3demo_loadShaders(demoState);
-
-		// scene objects
-		a3demo_initScene(demoState);
+			// scene objects
+			a3demo_initScene(demoState);
+			*/
+		}
 	}
 
 	// return persistent state pointer
@@ -247,15 +355,25 @@ A3DYLIBSYMBOL a3_DemoState *a3demoCB_unload(a3_DemoState *demoState, a3boolean h
 		// free fixed objects
 		a3textRelease(demoState->text);
 
+		// unload peer when unloading
+		if (demoState->peer)
+		{
+			RakNet::RakPeerInterface::DestroyInstance(demoState->peer);
+			demoState->peer = 0;
+		}
+
+		/*
 		// free graphics objects
 		a3demo_unloadGeometry(demoState);
 		a3demo_unloadShaders(demoState);
 
 		// validate unload
 		a3demo_validateUnload(demoState);
+		*/
 
 		// erase other stuff
 		a3trigFree();
+
 
 		// erase persistent state
 		free(demoState);
@@ -284,14 +402,17 @@ A3DYLIBSYMBOL a3i32 a3demoCB_idle(a3_DemoState *demoState)
 		if (a3timerUpdate(demoState->renderTimer) > 0)
 		{
 			// render timer ticked, update demo state and draw
-			a3demo_update(demoState, demoState->renderTimer->secondsPerTick);
-			a3demo_input(demoState, demoState->renderTimer->secondsPerTick);
-			a3demo_render(demoState);
+			//a3demo_update(demoState, demoState->renderTimer->secondsPerTick);
+			//a3demo_input(demoState, demoState->renderTimer->secondsPerTick);
+			//a3demo_render(demoState);
 
 			// update input
 			a3mouseUpdate(demoState->mouse);
 			a3keyboardUpdate(demoState->keyboard);
 			a3XboxControlUpdate(demoState->xcontrol);
+
+			// update
+			a3DemoTestUpdate(demoState);
 
 			// render occurred this idle: return +1
 			return +1;
@@ -332,8 +453,10 @@ A3DYLIBSYMBOL void a3demoCB_windowMove(a3_DemoState *demoState, a3i32 newWindowP
 // window resizes
 A3DYLIBSYMBOL void a3demoCB_windowResize(a3_DemoState *demoState, a3i32 newWindowWidth, a3i32 newWindowHeight)
 {
+	/*
 	a3ui32 i;
 	a3_DemoCamera *camera;
+	*/
 
 	// account for borders here
 	const a3i32 frameBorder = 0;
@@ -355,6 +478,10 @@ A3DYLIBSYMBOL void a3demoCB_windowResize(a3_DemoState *demoState, a3i32 newWindo
 	demoState->frameAspect = frameAspect;
 	demoState->frameBorder = frameBorder;
 
+	// window half sizes
+	halfWindowWidth = demoState->windowWidth * 0.5f;
+	halfWindowHeight = demoState->windowHeight * 0.5f;
+
 	// framebuffers should be initialized or re-initialized here 
 	//	since they are likely dependent on the window size
 
@@ -362,6 +489,7 @@ A3DYLIBSYMBOL void a3demoCB_windowResize(a3_DemoState *demoState, a3i32 newWindo
 	// use framebuffer deactivate utility to set viewport
 	a3framebufferDeactivateSetViewport(a3fbo_depthDisable, -frameBorder, -frameBorder, demoState->frameWidth, demoState->frameHeight);
 
+	/*
 	// viewing info for projection matrix
 	// initialize cameras dependent on viewport
 	for (i = 0, camera = demoState->camera + i; i < demoStateMaxCount_cameraObject; ++i, ++camera)
@@ -369,6 +497,7 @@ A3DYLIBSYMBOL void a3demoCB_windowResize(a3_DemoState *demoState, a3i32 newWindo
 		camera->aspect = frameAspect;
 		a3demo_updateCameraProjection(camera);
 	}
+	*/
 }
 
 // any key is pressed
@@ -396,14 +525,55 @@ A3DYLIBSYMBOL void a3demoCB_keyRelease(a3_DemoState *demoState, a3i32 virtualKey
 // NOTE: there is no release counterpart
 A3DYLIBSYMBOL void a3demoCB_keyCharPress(a3_DemoState *demoState, a3i32 asciiKey)
 {
+	/*
 	a3ui32 demoSubMode = demoState->demoSubMode[demoState->demoMode];
 	const a3ui32 demoSubModeCount = demoState->demoSubModeCount[demoState->demoMode];
 	const a3ui32 demoOutput = demoState->demoOutputMode[demoState->demoMode][demoSubMode];
 	const a3ui32 demoOutputCount = demoState->demoOutputCount[demoState->demoMode][demoSubMode];
+	*/
 
 	// persistent state update
 	a3keyboardSetStateASCII(demoState->keyboard, (a3byte)asciiKey);
 
+	// switch statement for keyboard input
+	// Ascii table for reference: http://www.asciitable.com/
+	switch (asciiKey)
+	{
+	// Backspace
+	case 8:
+		if (bufferLoc != 0)
+		{
+			bufferLoc--;
+			inputBuffer[bufferLoc] = 0;
+		}
+		break;
+
+	// Carriage return (Enter)
+	case 13:
+		// add message to chat buffer
+		strncpy(chatBuffer[chatLoc], inputBuffer, 512);
+		// increment current chat buffer
+		chatLoc++;
+		// ajust chat view location
+		chatOffset = max(0, chatLoc - CHAT_VIEW_MAX);
+
+		// TO-DO Parse input and do whatever
+
+		// empty input buffer
+		memset(inputBuffer, 0, sizeof inputBuffer);
+		// reset input buffer current location
+		bufferLoc = 0;
+		break;
+
+	// Remaining input
+	default:
+		// if there is input, add it to input buffer
+		inputBuffer[bufferLoc] = asciiKey;
+		bufferLoc++;
+		break;
+	}
+
+	/*
 	// handle special cases immediately
 	switch (asciiKey)
 	{
@@ -499,6 +669,7 @@ A3DYLIBSYMBOL void a3demoCB_keyCharPress(a3_DemoState *demoState, a3i32 asciiKey
 			demoSubMode, demoOutput, demoSubModeCount, demoOutputCount);
 		break;
 	}
+	*/
 }
 
 // ASCII key is held
@@ -507,7 +678,29 @@ A3DYLIBSYMBOL void a3demoCB_keyCharHold(a3_DemoState *demoState, a3i32 asciiKey)
 	// persistent state update
 	a3keyboardSetStateASCII(demoState->keyboard, (a3byte)asciiKey);
 
+	// ** Same switch as keyCharPress, but used for when key is held
+	// switch statement for keyboard input
+	// Ascii table for reference: http://www.asciitable.com/
+	switch (asciiKey)
+	{
+	// Backspace
+	case 8:
+		if (bufferLoc != 0)
+		{
+			bufferLoc--;
+			inputBuffer[bufferLoc] = 0;
+		}
+		break;
 
+	// Remaining input
+	default:
+		// if there is input, add it to input buffer
+		inputBuffer[bufferLoc] = asciiKey;
+		bufferLoc++;
+		break;
+	}
+
+	/*
 	// callback for current mode
 	switch (demoState->demoMode)
 	{
@@ -516,6 +709,7 @@ A3DYLIBSYMBOL void a3demoCB_keyCharHold(a3_DemoState *demoState, a3i32 asciiKey)
 		a3demoCB_keyCharHold_main(demoState, asciiKey);
 		break;
 	}
+	*/
 }
 
 // mouse button is clicked
@@ -546,12 +740,16 @@ A3DYLIBSYMBOL void a3demoCB_mouseRelease(a3_DemoState *demoState, a3i32 button, 
 A3DYLIBSYMBOL void a3demoCB_mouseWheel(a3_DemoState *demoState, a3i32 delta, a3i32 cursorX, a3i32 cursorY)
 {
 	// controlled camera when zooming
-	a3_DemoCamera *camera;
+	// a3_DemoCamera* camera;
 
 	// persistent state update
 	a3mouseSetStateWheel(demoState->mouse, (a3_MouseWheelState)delta);
 	a3mouseSetPosition(demoState->mouse, cursorX, cursorY);
 
+	// set view location if scrolling
+	chatOffset = max(0, min(chatLoc - CHAT_VIEW_MAX, chatOffset + (-1 * delta)));
+
+	/*
 	switch (demoState->demoMode)
 	{
 		// main render pipeline
@@ -564,6 +762,7 @@ A3DYLIBSYMBOL void a3demoCB_mouseWheel(a3_DemoState *demoState, a3i32 delta, a3i
 		a3demo_updateCameraProjection(camera);
 		break;
 	}
+	*/
 }
 
 // mouse moves

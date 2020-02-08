@@ -1,0 +1,52 @@
+1/30/20 Networking notes:
+
+## Changes to animal3D to start networking in it
+
+(Moving everything into "main", a3_demo_callbacks.cpp)
+- Copy DemoState structure up to trig table (~130 in a3_DemoState.h)
+- Add existing includes needed for the copied material
+- Remove demo callbacks that are not needed (switch with cases, reallocation tasks, unloads, idle, window resize, key char press, char hold, mouse wheel)
+
+// Functionality Tour
+- load (where we actually create the demostate and initialize) move string table out of comment (leave other 2 at bottom)
+- Initial Allocation (~240) set up tasks to about (~269)
+- Unload (just need text and everything from trig free below (~316))
+- Idle (when window is not doing anything, everything is fine except update, input, renderer at top (~345))
+- Window Resize (all new value copies needed and account for border here stuff, also needs framebuffer deactivate viewport)
+- CharPress (Keep keyboard state update at top(~466))
+- MouseWheel (Keep mouse wheel update state and position (~614))
+
+// Additions and Changes
+#include "animal-A3DM/animal3D-A3DM.h"
+#include "RakNet/RakPeerInterface.h"
+// Below networking stuff
+a3_Timer renderTimer[1];
+RakNet::RakPeerInterface *peer;
+
+// Add towards top (~175)
+#include <GL/glew.h>
+
+void a3demoTestRender(a3_DemoState const* demoState) CALL IN IDLE LOOP
+{
+	// clear color
+	glClear(GL_COLOR_BUFFER_BIT);
+	
+	// draw some text (Just look at a3_DemoState_idle-render.c (~170))
+	a3TextDraw(demoState->text,...)
+}
+
+void a3DemoTestInput(a3_DemoState const* demoState){}
+void a3DemoTestNetworking_recieve(a3_DemoState const* demoState){} // RakNet::Packet* packet for loop
+void a3DemoTestNetworking_send(a3_DemoState const* demoState){}
+void a3DemoTestUpdate(a3_DemoState const* demoState){}
+void a3DemoTestRender(a3_DemoState const* demoState){}
+
+// put ints inside load with rest of networking setup
+if(!demoState->peer)
+	demoState->peer = RakNet::RakPeerInterface::GetInstance();
+	if(demoState->peer)
+
+// put cleanup inside unload before demostate is terminated
+if(demoState->peer)
+	RakNet::RakPeerInterface::DestroyInstance(demoState->peer);
+	demoState->peer = 0;
