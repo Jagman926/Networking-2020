@@ -130,31 +130,30 @@ public:
 // default max clients
 const unsigned int DEFAULT_MAX_CLIENTS = 10;
 
-// number of maximum clients
-unsigned int maxClients = DEFAULT_MAX_CLIENTS;
+struct RakClient
+{
+	// number of maximum clients
+	unsigned int maxClients = DEFAULT_MAX_CLIENTS;
 
-// the server port number
-unsigned short serverPort;
+	// the server port number
+	unsigned short serverPort;
 
-// List containing all users 
-User users[DEFAULT_MAX_CLIENTS];
+	// List containing all users 
+	User users[DEFAULT_MAX_CLIENTS];
 
-// string for host system address
-char hostSystemAddress [512];
+	// string for host system address
+	char hostSystemAddress[512];
 
+	// Peer to use for this instance of the program
+	RakNet::RakPeerInterface* peer;
 
-/* --------------------- RAKNET VARIABLES -------------------------------- */
+	// Packet variable to read through in NetUpdate
+	RakNet::Packet* packet;
 
-// Peer to use for this instance of the program
-RakNet::RakPeerInterface* peer;
-// Packet variable to read through in NetUpdate
-RakNet::Packet *packet;
+	// FUNCTIONS
 
-/* ------------------------ FUNCTIONS ------------------------------- */
-
-// Runs the main networking loop of the program
-void NetUpdate(bool connected);
-
-
+	// Runs the main networking loop of the program
+	void NetUpdate(bool connected);
+};
 
 #endif // !RAKNET_CORE_H

@@ -10,7 +10,7 @@ User::User(char name[], char sysAddress[], UserType userType)
 }
 
 
-void NetUpdate(bool connected)
+void RakClient::NetUpdate(bool connected)
 {
 	// Initialize peer instance at start
 	peer = RakNet::RakPeerInterface::GetInstance();

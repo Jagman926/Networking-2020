@@ -88,6 +88,8 @@ struct a3_DemoState
 };
 //-----------------------------------------------------------------------------
 
+ChatText chat;
+RakClient client;
 
 // Peer User Variables --------------------------------------------------------
 
@@ -120,11 +122,11 @@ void a3DemoRenderTextChat(a3_DemoState const* demostate)
 
 	// Renders chat log
 	int i;
-	for (i = chatOffset; i < chatOffset + CHAT_VIEW_MAX; i++)
+	for (i = chat.chatOffset; i < chat.chatOffset + chat.CHAT_VIEW_MAX; i++)
 	{
-		if (i >= 0 && i < chatLoc)
+		if (i >= 0 && i < chat.chatLoc)
 		{
-			a3textDraw(demostate->text, textAlign, textOffset += textOffsetDelta, textDepth, 1, 1, 1, 1, "%s: %s", username, chatBuffer[i]);
+			a3textDraw(demostate->text, textAlign, textOffset += textOffsetDelta, textDepth, 1, 1, 1, 1, "%s: %s", username, chat.chatBuffer[i]);
 		}
 	}
 }
@@ -138,7 +140,7 @@ void a3DemoTestRender(a3_DemoState const* demoState)
 	a3DemoRenderTextChat(demoState);
 
 	// Renders user current typing area
-	a3textDraw(demoState->text, -0.98f, -0.95f, -1.0f, 1, 1, 1, 1, inputBuffer);
+	a3textDraw(demoState->text, -0.98f, -0.95f, -1.0f, 1, 1, 1, 1, chat.inputBuffer);
 }
 
 void a3DemoTestUpdate(a3_DemoState const* demoState) 
@@ -287,10 +289,10 @@ A3DYLIBSYMBOL a3_DemoState *a3demoCB_load(a3_DemoState *demoState, a3boolean hot
 
 			// peer instance
 			// TO-DO Init peer on load
-			if (!peer)
+			if (!client.peer)
 			{
-				peer = RakNet::RakPeerInterface::GetInstance();
-				if (peer)
+				client.peer = RakNet::RakPeerInterface::GetInstance();
+				if (client.peer)
 				{
 					// TO-DO
 				}
@@ -341,10 +343,10 @@ A3DYLIBSYMBOL a3_DemoState *a3demoCB_unload(a3_DemoState *demoState, a3boolean h
 		a3textRelease(demoState->text);
 
 		// unload peer when unloading
-		if (peer)
+		if (client.peer)
 		{
-			RakNet::RakPeerInterface::DestroyInstance(peer);
-			peer = 0;
+			RakNet::RakPeerInterface::DestroyInstance(client.peer);
+			client.peer = 0;
 		}
 
 		/*
@@ -522,10 +524,10 @@ A3DYLIBSYMBOL void a3demoCB_keyCharPress(a3_DemoState *demoState, a3i32 asciiKey
 	{
 	// Backspace
 	case 8:
-		if (bufferLoc != 0)
+		if (chat.bufferLoc != 0)
 		{
-			bufferLoc--;
-			inputBuffer[bufferLoc] = 0;
+			chat.bufferLoc--;
+			chat.inputBuffer[chat.bufferLoc] = 0;
 		}
 		break;
 
@@ -538,16 +540,16 @@ A3DYLIBSYMBOL void a3demoCB_keyCharPress(a3_DemoState *demoState, a3i32 asciiKey
 
 
 		// empty input buffer
-		memset(inputBuffer, 0, sizeof inputBuffer);
+		memset(chat.inputBuffer, 0, sizeof chat.inputBuffer);
 		// reset input buffer current location
-		bufferLoc = 0;
+		chat.bufferLoc = 0;
 		break;
 
 	// Remaining input
 	default:
 		// if there is input, add it to input buffer
-		inputBuffer[bufferLoc] = asciiKey;
-		bufferLoc++;
+		chat.inputBuffer[chat.bufferLoc] = asciiKey;
+		chat.bufferLoc++;
 		break;
 	}
 
@@ -663,18 +665,18 @@ A3DYLIBSYMBOL void a3demoCB_keyCharHold(a3_DemoState *demoState, a3i32 asciiKey)
 	{
 	// Backspace
 	case 8:
-		if (bufferLoc != 0)
+		if (chat.bufferLoc != 0)
 		{
-			bufferLoc--;
-			inputBuffer[bufferLoc] = 0;
+			chat.bufferLoc--;
+			chat.inputBuffer[chat.bufferLoc] = 0;
 		}
 		break;
 
 	// Remaining input
 	default:
 		// if there is input, add it to input buffer
-		inputBuffer[bufferLoc] = asciiKey;
-		bufferLoc++;
+		chat.inputBuffer[chat.bufferLoc] = asciiKey;
+		chat.bufferLoc++;
 		break;
 	}
 
@@ -725,7 +727,7 @@ A3DYLIBSYMBOL void a3demoCB_mouseWheel(a3_DemoState *demoState, a3i32 delta, a3i
 	a3mouseSetPosition(demoState->mouse, cursorX, cursorY);
 
 	// set view location if scrolling
-	chatOffset = max(0, min(chatLoc - CHAT_VIEW_MAX, chatOffset + (-1 * delta)));
+	chat.chatOffset = max(0, min(chat.chatLoc - chat.CHAT_VIEW_MAX, chat.chatOffset + (-1 * delta)));
 
 	/*
 	switch (demoState->demoMode)

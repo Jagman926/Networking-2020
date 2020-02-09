@@ -2,7 +2,7 @@
 #include <string>
 #include <algorithm>
 
-void OutputToChat(char buffer[512])
+void ChatText::Output(char buffer[512])
 {
 	// add message to chat buffer
 	std::strncpy(chatBuffer[chatLoc], inputBuffer, 512);
