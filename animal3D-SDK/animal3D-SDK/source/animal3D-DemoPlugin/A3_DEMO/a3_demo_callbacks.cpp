@@ -135,8 +135,12 @@ void a3DemoNetworking_init()
 				cChat.In(userNamePrompt);
 				memset(userNamePrompt, 0, sizeof userNamePrompt);
 			}
-			else if(cInput.lastInputBuffer != 0)
-				std::strcpy(rakClient.thisUser.userName, cInput.lastInputBuffer);
+			else if (cInput.lastInputBuffer[0] != 0)
+			{
+				// Parse for command name
+				char* tempUser = strtok(cInput.lastInputBuffer, "\r");
+				strncpy(rakClient.thisUser.userName, tempUser, 512);
+			}
 		}
 		else if (rakClient.thisUser.type == UserType::NONE)
 		{
@@ -225,10 +229,22 @@ void a3DemoNetworking_init()
 				}
 				else if (cInput.lastInputBuffer[0] != 0)
 				{
-					if(cInput.lastInputBuffer[0] == 'L' || cInput.lastInputBuffer[0] == 'l')
+					if (cInput.lastInputBuffer[0] == 'L' || cInput.lastInputBuffer[0] == 'l')
+					{
+						// Set host system address
+						strcpy(rakClient.hostSystemAddress,"127.0.0.1|1");
+						// Connect to host
 						rakClient.peer->Connect("127.0.0.1", rakClient.serverPort, 0, 0);
+					}
 					else
+					{
+						// Set host system address
+						char messageFormat[512];
+						sprintf(messageFormat, "%s|1", cInput.lastInputBuffer);
+						strcpy(rakClient.hostSystemAddress, messageFormat);
+						// Connect to host
 						rakClient.peer->Connect(cInput.lastInputBuffer, rakClient.serverPort, 0, 0);
+					}
 					// Clear chat
 					cChat.ClearChatBuffer();
 					// Notify starting client
@@ -247,6 +263,9 @@ void a3DemoNetworking_recieve()
 	// For loop for reading packet information
 	for (rakClient.packet = rakClient.peer->Receive(); rakClient.packet; rakClient.peer->DeallocatePacket(rakClient.packet), rakClient.packet = rakClient.peer->Receive())
 	{
+		// Message format array for output
+		char msgFormat[512];
+
 		switch (rakClient.packet->data[0])
 		{
 			/* ------------------------------------------------------------------------------------------------------- */
@@ -314,8 +333,7 @@ void a3DemoNetworking_recieve()
 			rakClient.currentUsers++;
 
 			// Print the message with the message string from the structure
-			char msgFormat [512];
-			sprintf(msgFormat, "%s has joined the chat!\n", p->msgText);
+			sprintf(msgFormat, "%s has joined the chat!", p->msgText);
 			cChat.In(msgFormat);
 		}
 		break;
@@ -326,8 +344,7 @@ void a3DemoNetworking_recieve()
 			// Cast packet to our data structure
 			messagePack* p = (messagePack*)rakClient.packet->data;
 			// Print the message with the message string from the structure
-			char msgFormat[512];
-			sprintf(msgFormat, "Goodbye, %s\n", p->msgText);
+			sprintf(msgFormat, "Goodbye, %s", p->msgText);
 			cChat.In(msgFormat);
 		}
 		break;
@@ -339,43 +356,65 @@ void a3DemoNetworking_recieve()
 
 			// Name to designate in the message delivery
 			char senderName[512];
-			// control if we broadcast
-			bool isBroadcast = false;
+			char recieverSystemAddress[512];
 			// read through user database
 			for (int i = 0; i < rakClient.currentUsers; i++)
 			{
 				// check the system address against the one in the packet
-				if (rakClient.users[i].systemAddress == rakClient.packet->systemAddress.ToString())
+				if (strcmp(rakClient.users[i].systemAddress, rakClient.packet->systemAddress.ToString()) == 0)
 				{
 					// copy it on over
 					strcpy(senderName, rakClient.users[i].userName);
 				}
+				if (strcmp(rakClient.users[i].userName, p->recieverUserName) == 0)
+				{
+					strcpy(recieverSystemAddress, rakClient.users[i].systemAddress);
+				}
 			}
 
-			// check if we broadcastin
-			if (p->recieverUserName == "all")
-				isBroadcast = true;
-
-			// build message delivery data
-			ChatMessageDelivery msgDelivery(ID_CHAT_MSG_DELIVERY, senderName, isBroadcast, p->msgTxt);
-			rakClient.peer->Send((const char*)& msgDelivery, sizeof(msgDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, rakClient.packet->systemAddress, isBroadcast);
+			// check if we broadcasting
+			if (strcmp(p->recieverUserName, "all") == 0)
+			{
+				// Output message for host
+				sprintf(msgFormat, "(All) %s: %s", senderName, p->msgTxt);
+				cChat.In(msgFormat);
+				// build message delivery data
+				ChatMessageDelivery msgDelivery(ID_CHAT_MSG_DELIVERY, senderName, false, p->msgTxt);
+				rakClient.peer->Send((const char*)& msgDelivery, sizeof(msgDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, rakClient.packet->systemAddress, true);
+			}
+			else
+			{
+				// Check if self send private message
+				if (strcmp(senderName, p->recieverUserName) == 0)
+				{
+					// Output message for host
+					sprintf(msgFormat, "(Error) %s tried to send a private message to themself", senderName);
+					cChat.In(msgFormat);
+				}
+				else
+				{
+					// Output message for host
+					sprintf(msgFormat, "(Private) %s to %s: %s", senderName, p->recieverUserName, p->msgTxt);
+					cChat.In(msgFormat);
+					// build message delivery data
+					ChatMessageDelivery msgDelivery(ID_CHAT_MSG_DELIVERY, senderName, true, p->msgTxt);
+					rakClient.peer->Send((const char*)& msgDelivery, sizeof(msgDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)recieverSystemAddress, false);
+				}
+			}
 		}
 		break;
-		// DAN
 		case ID_CHAT_MSG_DELIVERY:
 		{
 			// cast packet to data
 			ChatMessageDelivery* p = (ChatMessageDelivery*)rakClient.packet->data;
-			if (p->priv)
+			if (p->isPrivate)
 			{
-				char msgFormat[512];
-				sprintf(msgFormat, "(Private) %s : %s", p->senderUserName, p->msgTxt);
+				sprintf(msgFormat, "(Private) %s: %s", p->senderUserName, p->msgTxt);
 				cChat.In(msgFormat);
 			}
 			else
 			{
-				char msgFormat[512];
-				sprintf(msgFormat, "%s : %s", p->senderUserName, p->msgTxt);
+				sprintf(msgFormat, "%s: %s", p->senderUserName, p->msgTxt);
 				cChat.In(msgFormat);
 			}
 		}
@@ -391,11 +430,13 @@ void a3DemoNetworking_recieve()
 		break;
 
 		default:
-			char msgFormat[512];
 			sprintf(msgFormat, "Message with identifier %i has arrived", rakClient.packet->data[0]);
 			cChat.In(msgFormat);
 			break;
 		}
+
+		// Erase information of msgFormat
+		memset(msgFormat, 0, sizeof msgFormat);
 	}
 }
 
@@ -406,7 +447,9 @@ void a3DemoNetworking_send(char message [512])
 	char messageDelimiters[] = "\n\r";
 	// Parsed information
 	char* command;
-	char* remainingMsg;
+	char* messageTmp;
+	char finalMessage[512];
+	char finalUser[512];
 
 
 	// If preceeded with '/', then it is a send command
@@ -415,43 +458,65 @@ void a3DemoNetworking_send(char message [512])
 		// Parse for command name
 		command = strtok(message, commandDelimiters);
 		// Save message text
-		remainingMsg = strtok(NULL, messageDelimiters);
+		messageTmp = strtok(NULL, messageDelimiters);
 		
 		// ------------------------------- Client Commands ------------------------------------
 
 		// -------- All Message ---------
 		if (strcmp(command, "all") == 0)
 		{
-			// Output message
-			char msgFormat[512];
-			sprintf(msgFormat, "Message To All: %s", remainingMsg);
-			cChat.In(msgFormat);
+			// Get final message
+			strncpy(finalMessage, messageTmp, 512);
 
-			// SEND
-			// Create our private message request
-			ChatMessageRequest messageRequest(ID_CHAT_MSG_REQUEST, command, remainingMsg);
-			// Send to host
-			rakClient.peer->Send((const char*)&messageRequest, sizeof(messageRequest), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.hostSystemAddress, false);
+			// If not host, send to host
+			if (rakClient.thisUser.type != UserType::SERVER)
+			{
+				// Create our message request
+				ChatMessageRequest messageRequest(ID_CHAT_MSG_REQUEST, "all", finalMessage);
+				rakClient.peer->Send((const char*)& messageRequest, sizeof(messageRequest), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.hostSystemAddress, false);
+			}
+			// If host, Send broadcast
+			else
+			{
+				// Create our message delivery
+				ChatMessageDelivery msgDelivery(ID_CHAT_MSG_DELIVERY, rakClient.thisUser.userName, false, finalMessage);
+				rakClient.peer->Send((const char*)& msgDelivery, sizeof(msgDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.thisUser.systemAddress, true);
+			}
 		}
 		// ------ Private Message -------
 		else if (strcmp(command, "msg") == 0)
 		{
-			char* user;
+			char* userTemp;
 			// getUsersName
-			user = strtok(remainingMsg, commandDelimiters);
+			userTemp = strtok(messageTmp, commandDelimiters);
 			// Save message text
-			remainingMsg = strtok(NULL, messageDelimiters);
+			messageTmp = strtok(NULL, messageDelimiters);
+			// Get final message and user
+			strncpy(finalMessage, messageTmp, 512);
+			strncpy(finalUser, userTemp, 512);
 
-			// Output user
-			char msgFormat[512];
-			sprintf(msgFormat, "Message to %s: %s", user, remainingMsg);
-			cChat.In(msgFormat);
+			// If not host, send to host
+			if (rakClient.thisUser.type != UserType::SERVER)
+			{
+				// Create our message request
+				ChatMessageRequest messageRequest(ID_CHAT_MSG_REQUEST, finalUser, finalMessage);
+				rakClient.peer->Send((const char*)& messageRequest, sizeof(messageRequest), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.hostSystemAddress, false);
+			}
+			// If host, Send broadcast
+			else
+			{
+				char recieverSystemAddress[512];
+				// read through user database
+				for (int i = 0; i < rakClient.currentUsers; i++)
+				{
+					if (strcmp(rakClient.users[i].userName, finalUser) == 0)
+						strcpy(recieverSystemAddress, rakClient.users[i].systemAddress);
+				}
 
-			// SEND
-			// Create our private message request
-			ChatMessageRequest messageRequest(ID_CHAT_MSG_REQUEST, user, remainingMsg);
-			// Send to host
-			rakClient.peer->Send((const char*)&messageRequest, sizeof(messageRequest), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.hostSystemAddress, false);
+				// Create our message delivery
+				ChatMessageDelivery msgDelivery(ID_CHAT_MSG_DELIVERY, rakClient.thisUser.userName, true, finalMessage);
+				rakClient.peer->Send((const char*)& msgDelivery, sizeof(msgDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)recieverSystemAddress, false);
+			}
 		}
 		// ------ Clear Chat History -------
 		else if (strcmp(command, "clear") == 0)

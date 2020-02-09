@@ -93,7 +93,7 @@ public:
 
 
 	// Functions
-	ChatMessageRequest(RakNet::MessageID ID, const char name[], const char msg[]) { strcpy(recieverUserName, name), strcpy(msgTxt, msg), msgID = ID; };
+	ChatMessageRequest(RakNet::MessageID ID, const char name[], const char msg[]) { msgID = ID, strcpy(recieverUserName, name), strcpy(msgTxt, msg); };
 
 };
 #pragma pack (pop)
@@ -115,12 +115,12 @@ public:
 	// The name of the participant from whom the message originated; since this could include the host, they should be a recognizable name.
 	char senderUserName[512];
 	// Indicates whether the message was broadcast or directed at the receiver.
-	bool priv;
+	bool isPrivate;
 	// The contents of the message.  Should have a maximum length.
 	char msgTxt[512];
 
 	// Functions
-	ChatMessageDelivery(RakNet::MessageID ID, char name[], bool isPrivate, char msg[]) { strcpy(senderUserName, name), priv = isPrivate, strcpy(msgTxt, msg), msgID = ID; };
+	ChatMessageDelivery(RakNet::MessageID ID, char name[], bool priv, char msg[]) { msgID = ID, strcpy(senderUserName, name), isPrivate = priv, strcpy(msgTxt, msg); };
 	//void CreatePacket(RakNet::MessageID ID, std::string string) { msgID = ID, msgString = string; };
 
 };
