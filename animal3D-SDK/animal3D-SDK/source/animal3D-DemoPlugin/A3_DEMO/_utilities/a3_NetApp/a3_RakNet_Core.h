@@ -47,7 +47,7 @@ public:
 	// Default ctor
 	User() {};
 	// Used for creating new users
-	User(char name[], char sysAddress[], UserType userType);
+	User(char name[], const char* sysAddress, UserType userType);
 };
 
 // Custom message packet structure
@@ -141,6 +141,12 @@ struct RakClient
 	// List containing all users 
 	User users[DEFAULT_MAX_CLIENTS];
 
+	// the user to be used by this RakClient
+	User thisUser;
+
+	// number of current users, including host
+	int currentUsers = 0;
+
 	// string for host system address
 	char hostSystemAddress[512];
 
@@ -151,9 +157,12 @@ struct RakClient
 	RakNet::Packet* packet;
 
 	// FUNCTIONS
+	
 
 	// Runs the main networking loop of the program
 	void NetUpdate(bool connected);
+	// Handles packets in a for loop
+	char* PacketHandling(bool connected);
 };
 
 #endif // !RAKNET_CORE_H
