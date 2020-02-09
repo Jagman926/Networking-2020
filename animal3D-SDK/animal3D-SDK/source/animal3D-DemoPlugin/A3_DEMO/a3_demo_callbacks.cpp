@@ -280,10 +280,10 @@ void a3DemoNetworking_recieve()
 			messagePack* p = (messagePack*)rakClient.packet->data;
 
 			// Create the client
-			//User client(p->msgText, packet->systemAddress.ToString());
+			User client(p->msgText, rakClient.packet->systemAddress.ToString(), UserType::PLAYER);
 
 			// Add the client to the user list
-			rakClient.users[rakClient.currentUsers] = rakClient.thisUser;
+			rakClient.users[rakClient.currentUsers] = client;
 
 			// increment current users
 			rakClient.currentUsers++;
@@ -292,6 +292,7 @@ void a3DemoNetworking_recieve()
 			char msgFormat [512];
 			sprintf(msgFormat, "%s has joined the chat!\n", p->msgText);
 			cChat.In(msgFormat);
+			free(msgFormat);
 		}
 		break;
 
@@ -304,6 +305,7 @@ void a3DemoNetworking_recieve()
 			char msgFormat[512];
 			sprintf(msgFormat, "Goodbye, %s\n", p->msgText);
 			cChat.In(msgFormat);
+			free(msgFormat);
 		}
 		break;
 		// DAN
@@ -346,12 +348,14 @@ void a3DemoNetworking_recieve()
 				char msgFormat[512];
 				sprintf(msgFormat, "(Private) %s : %s", p->senderUserName, p->msgTxt);
 				cChat.In(msgFormat);
+				free(msgFormat);
 			}
 			else
 			{
 				char msgFormat[512];
 				sprintf(msgFormat, "%s : %s", p->senderUserName, p->msgTxt);
 				cChat.In(msgFormat);
+				free(msgFormat);
 			}
 		}
 		break;
