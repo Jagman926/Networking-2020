@@ -61,6 +61,15 @@
     <Filter Include="Source Files\common\A3_DEMO\a3_Networking">
       <UniqueIdentifier>{7cd1e83b-1cfa-4949-86a4-d5e0bf1c265a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\common\A3_DEMO\a3_Networking\a3_NetApp">
+      <UniqueIdentifier>{7da67208-aab8-46d8-acd8-07d60ceb3fc6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\A3_DEMO\a3_NetApp">
+      <UniqueIdentifier>{cf822dfc-4baa-4ebb-96a6-09c3292855da}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\common\A3_DEMO\_utilities\a3_NetApp">
+      <UniqueIdentifier>{c5b77f39-d5a3-4b13-837f-7367f74e1261}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="_src_win\main_dll.c">
@@ -90,9 +99,6 @@
     <ClCompile Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_DemoState\a3_DemoState_unloading.c">
       <Filter>Source Files\common\A3_DEMO\a3_DemoState</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_demo_callbacks.cpp">
-      <Filter>Source Files\common\A3_DEMO</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_Networking_gs_checkers.c">
       <Filter>Source Files\common\A3_DEMO\a3_Networking</Filter>
     </ClCompile>
@@ -104,6 +110,15 @@
     </ClCompile>
     <ClCompile Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_Networking_gs_battleship.c">
       <Filter>Source Files\common\A3_DEMO\a3_Networking</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_demo_callbacks.cpp">
+      <Filter>Source Files\common\A3_DEMO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_NetApp\a3_NetApp_Client.cpp">
+      <Filter>Source Files\common\A3_DEMO\a3_Networking\a3_NetApp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\_utilities\a3_NetApp\a3_RakNet_Core.cpp">
+      <Filter>Source Files\common\A3_DEMO\_utilities\a3_NetApp</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -121,6 +136,12 @@
     </ClInclude>
     <ClInclude Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\_utilities\a3_DemoShaderProgram.h">
       <Filter>Header Files\A3_DEMO\_utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\_utilities\a3_NetApp\a3_RakNet_Core.h">
+      <Filter>Header Files\A3_DEMO\a3_NetApp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_NetApp\a3_NetApp_Client.h">
+      <Filter>Header Files\A3_DEMO\a3_NetApp</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

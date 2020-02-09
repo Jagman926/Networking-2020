@@ -39,9 +39,13 @@
 #include "animal3D-A3DG/animal3D-A3DG.h"
 
 #include "animal3D-A3DM/animal3D-A3DM.h"
-#include "RakNet/RakPeerInterface.h"
 
 #include <GL/glew.h>
+
+// Client Includes
+#include "A3_DEMO/a3_Networking/a3_NetApp/a3_NetApp_Client.h"
+// Network Includes
+#include "A3_DEMO/_utilities/a3_NetApp/a3_RakNet_Core.h"
 
 struct a3_DemoState
 {
@@ -80,8 +84,6 @@ struct a3_DemoState
 	// pointer to fast trig table
 	a3f32 trigTable[4096 * 4];
 
-	// NETWORKING
-	RakNet::RakPeerInterface* peer;
 	a3_Timer renderTimer[1];
 };
 //-----------------------------------------------------------------------------
@@ -90,23 +92,6 @@ struct a3_DemoState
 // Peer User Variables --------------------------------------------------------
 
 char username[512] = "Josh";
-
-//-----------------------------------------------------------------------------
-
-// Text Rendering Variables ---------------------------------------------------
-
-// Input container
-char inputBuffer [512];
-a3i32 bufferLoc = 0;
-
-// Chat container
-char chatBuffer[512][512];
-a3i32 chatLoc = 0;
-a3i32 chatOffset = 0;
-const a3i32 CHAT_VIEW_MAX = 22;
-
-// Half window size information
-a3f32 halfWindowWidth, halfWindowHeight;
 
 //-----------------------------------------------------------------------------
 
@@ -302,10 +287,10 @@ A3DYLIBSYMBOL a3_DemoState *a3demoCB_load(a3_DemoState *demoState, a3boolean hot
 
 			// peer instance
 			// TO-DO Init peer on load
-			if (!demoState->peer)
+			if (!peer)
 			{
-				demoState->peer = RakNet::RakPeerInterface::GetInstance();
-				if (demoState->peer)
+				peer = RakNet::RakPeerInterface::GetInstance();
+				if (peer)
 				{
 					// TO-DO
 				}
@@ -356,10 +341,10 @@ A3DYLIBSYMBOL a3_DemoState *a3demoCB_unload(a3_DemoState *demoState, a3boolean h
 		a3textRelease(demoState->text);
 
 		// unload peer when unloading
-		if (demoState->peer)
+		if (peer)
 		{
-			RakNet::RakPeerInterface::DestroyInstance(demoState->peer);
-			demoState->peer = 0;
+			RakNet::RakPeerInterface::DestroyInstance(peer);
+			peer = 0;
 		}
 
 		/*
@@ -478,10 +463,6 @@ A3DYLIBSYMBOL void a3demoCB_windowResize(a3_DemoState *demoState, a3i32 newWindo
 	demoState->frameAspect = frameAspect;
 	demoState->frameBorder = frameBorder;
 
-	// window half sizes
-	halfWindowWidth = demoState->windowWidth * 0.5f;
-	halfWindowHeight = demoState->windowHeight * 0.5f;
-
 	// framebuffers should be initialized or re-initialized here 
 	//	since they are likely dependent on the window size
 
@@ -550,14 +531,11 @@ A3DYLIBSYMBOL void a3demoCB_keyCharPress(a3_DemoState *demoState, a3i32 asciiKey
 
 	// Carriage return (Enter)
 	case 13:
-		// add message to chat buffer
-		strncpy(chatBuffer[chatLoc], inputBuffer, 512);
-		// increment current chat buffer
-		chatLoc++;
-		// ajust chat view location
-		chatOffset = max(0, chatLoc - CHAT_VIEW_MAX);
+
+		// TO-DO Add message to chat buffer here
 
 		// TO-DO Parse input and do whatever
+
 
 		// empty input buffer
 		memset(inputBuffer, 0, sizeof inputBuffer);
