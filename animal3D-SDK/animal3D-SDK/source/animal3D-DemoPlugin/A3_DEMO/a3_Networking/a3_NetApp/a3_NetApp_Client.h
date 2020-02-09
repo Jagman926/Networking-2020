@@ -27,6 +27,7 @@ struct ClientInput
 public:
 	// Input container
 	char buffer[512];
+	char lastInputBuffer[512];
 	int bufferWriteLoc;
 
 	//constructors
@@ -35,6 +36,7 @@ public:
 	//
 	void In(int asciiValue);
 	void ClearLastValue();
+	void ClearLastBuffer();
 	void ClearChatBuffer();
 };
 

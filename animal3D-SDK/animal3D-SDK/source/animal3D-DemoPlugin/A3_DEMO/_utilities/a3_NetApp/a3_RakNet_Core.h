@@ -23,7 +23,8 @@ enum MessageIdentifiers
 
 enum UserType
 {
-	SERVER = 0,
+	NONE = 0,
+	SERVER,
 	PLAYER,
 	SPECTATOR,
 };
@@ -157,19 +158,7 @@ struct RakClient
 	RakNet::RakPeerInterface* peer;
 
 	// Packet variable to read through in NetUpdate
-	RakNet::Packet* packet;
-
-	// FUNCTIONS
-	
-
-	
-	// Update the RakNet utilities
-	void Update();
-	// Initialization loop if not connected
-	void Init(char input[]);
-	// Handles packets in a for loop
-	char* PacketHandling();
-	
+	RakNet::Packet* packet;	
 };
 
 #endif // !RAKNET_CORE_H

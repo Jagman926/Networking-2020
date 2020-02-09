@@ -39,8 +39,14 @@ void ClientInput::ClearLastValue()
 
 void ClientInput::ClearChatBuffer() 
 { 
+	strcpy(lastInputBuffer, buffer);
 	memset(buffer, 0, sizeof buffer); 
 	bufferWriteLoc = 0; 
+}
+
+void ClientInput::ClearLastBuffer()
+{
+	memset(lastInputBuffer, 0, sizeof lastInputBuffer);
 }
 
 /* ------------------------------------------------------------- */

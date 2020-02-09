@@ -86,21 +86,292 @@ struct a3_DemoState
 
 	a3_Timer renderTimer[1];
 };
-//-----------------------------------------------------------------------------
+
+// Client Variable Structures ----------------------------------------------------------
 
 ClientChat cChat;
 ClientInput cInput;
-RakClient client;
+RakClient rakClient;
 
 // Peer User Variables --------------------------------------------------------
 
-char username[512] = "Josh";
+// Prompts ---------------------------------------------------------
 
-//-----------------------------------------------------------------------------
+char userNamePrompt[512] = "Enter Username";
+char userTypePrompt[512] = "Would you like to Join (J) or Host (H) a chat room? (D) to Disconnect";
+char ipConnectPrompt[512] = "Enter server IP or (L) for 127.0.0.1";
 
-void a3DemoNetworking_recieve(a3_DemoState const* demoState) 
+void a3DemoNetworking_init()
 {
+	if (!rakClient.connected)
+	{
+		// TO-DO: Prompt user for inputting their user name
+		// TO-DO: Ask user if they want to join or host a game room
+		if (rakClient.thisUser.userName[0] == 0)
+		{
+			if (userNamePrompt[0] != 0)
+			{
+				cChat.In(userNamePrompt);
+				memset(userNamePrompt, 0, sizeof userNamePrompt);
+			}
+			else if(cInput.lastInputBuffer != 0)
+				std::strcpy(rakClient.thisUser.userName, cInput.lastInputBuffer);
+		}
+		else if (rakClient.thisUser.type == UserType::NONE)
+		{
+			if (userTypePrompt[0] != 0)
+			{
+				cChat.In(userTypePrompt);
+				memset(userTypePrompt, 0, sizeof userTypePrompt);
+			}
+			else if(cInput.lastInputBuffer != 0)
+			{
+				if (cInput.lastInputBuffer[0] == 'h' || cInput.lastInputBuffer[0] == 'H')
+				{
+					// Set type as player
+					rakClient.thisUser.type = UserType::SERVER;
 
+					// init the server port
+					rakClient.serverPort = 1;
+
+					// Start the Peer
+					RakNet::SocketDescriptor sd(rakClient.serverPort, 0);
+					rakClient.peer->Startup(rakClient.maxClients, &sd, 1);
+
+					// Create the User representing the server
+					User server(rakClient.thisUser.userName, rakClient.peer->GetSystemAddressFromGuid(rakClient.peer->GetMyGUID()).ToString(), SERVER);
+
+					// Add the server to the user list
+					rakClient.users[rakClient.currentUsers] = server;
+
+					// increment current users now that we have one
+					rakClient.currentUsers++;
+
+					// Set this rakclient to be a server
+					rakClient.thisUser = server;
+
+				}
+				else if (cInput.lastInputBuffer[0] == 'j' || cInput.lastInputBuffer[0] == 'J')
+				{
+					// Set type as player
+					rakClient.thisUser.type = UserType::PLAYER;
+
+					// Start the Peer
+					RakNet::SocketDescriptor sd;
+					rakClient.peer->Startup(1, &sd, 1);
+
+					// Create the user for the player
+					User player(rakClient.thisUser.userName, rakClient.peer->GetSystemAddressFromGuid(rakClient.peer->GetMyGUID()).ToString(), PLAYER);
+
+					// init the server port
+					rakClient.serverPort = 1;
+
+					// Set this rakclient to be a player
+					rakClient.thisUser = player;
+				}
+				else if (cInput.lastInputBuffer[0] == 's' || cInput.lastInputBuffer[0] == 'S')
+				{
+					rakClient.thisUser.type = UserType::SPECTATOR;
+
+				}
+				else if (cInput.lastInputBuffer[0] == 'd' || cInput.lastInputBuffer[0] == 'D')
+				{
+					// TO-DO close application
+				}
+			}
+		}
+		else
+		{
+			// Server initialization
+			if (rakClient.thisUser.type == SERVER)
+			{
+				// Notify starting server
+				cChat.In("Starting the Server!");
+				// Set connected
+				rakClient.connected = true;
+				// We need to let the server accept incoming connections from the clients
+				rakClient.peer->SetMaximumIncomingConnections(rakClient.maxClients);
+			}
+			// Player initialization
+			else
+			{
+				if (ipConnectPrompt[0] != 0)
+				{
+					cChat.In(ipConnectPrompt);
+					memset(ipConnectPrompt, 0, sizeof ipConnectPrompt);
+				}
+				else if (cInput.lastInputBuffer[0] != 0)
+				{
+					if(cInput.lastInputBuffer[0] == 'L' || cInput.lastInputBuffer[0] == 'l')
+						rakClient.peer->Connect("127.0.0.1", rakClient.serverPort, 0, 0);
+					else
+						rakClient.peer->Connect(cInput.lastInputBuffer, rakClient.serverPort, 0, 0);
+					// Notify starting client
+					cChat.In("Starting Client!");
+					// Set connected
+					rakClient.connected = true;
+				}
+			}
+		}
+	}
+
+}
+
+void a3DemoNetworking_recieve()
+{
+	// For loop for reading packet information
+	for (rakClient.packet = rakClient.peer->Receive(); rakClient.packet; rakClient.peer->DeallocatePacket(rakClient.packet), rakClient.packet = rakClient.peer->Receive())
+	{
+		switch (rakClient.packet->data[0])
+		{
+			/* ------------------------------------------------------------------------------------------------------- */
+			/*                                            DEFAULT MESSAGES                                             */
+			/* ------------------------------------------------------------------------------------------------------- */
+
+		case ID_REMOTE_DISCONNECTION_NOTIFICATION:
+			cChat.In("Another client has disconnected");
+			break;
+		case ID_REMOTE_CONNECTION_LOST:
+			cChat.In("Another client has lost the connection");
+			break;
+		case ID_REMOTE_NEW_INCOMING_CONNECTION:
+			cChat.In("Another client has connected");
+			break;
+		case ID_CONNECTION_REQUEST_ACCEPTED:
+		{
+			cChat.In("Our connection request has been accepted");
+			// Create data structure and initialize with our message identifier and message, in this case the user inputted client name
+			messagePack pack(ID_GAME_MSG_PLAYER_CONNECTED, rakClient.thisUser.userName);
+			// Send the data structure to the server by casting it to a byte stream using const char* and passing the size of our data structure
+			rakClient.peer->Send((const char*)& pack, sizeof(pack), HIGH_PRIORITY, RELIABLE_ORDERED, 0, rakClient.packet->systemAddress, false);
+		}
+		break;
+		case ID_NEW_INCOMING_CONNECTION:
+			cChat.In("A connection is incoming");
+			break;
+		case ID_NO_FREE_INCOMING_CONNECTIONS:
+			cChat.In("The server is full");
+			break;
+		case ID_DISCONNECTION_NOTIFICATION:
+			if (rakClient.thisUser.type == SERVER) {
+				cChat.In("A client has disconnected");
+			}
+			else {
+				cChat.In("We have been disconnected");
+			}
+			break;
+		case ID_CONNECTION_LOST:
+			if (rakClient.thisUser.type == SERVER) {
+				cChat.In("A client lost the connection");
+			}
+			else {
+				cChat.In("Connection lost");
+			}
+			break;
+
+			/* ------------------------------------------------------------------------------------------------------- */
+			/*                                            CUSTOM MESSAGES                                              */
+			/* ------------------------------------------------------------------------------------------------------- */
+
+		// Custom message loop for player welcome
+		case ID_GAME_MSG_PLAYER_CONNECTED:
+		{
+			// Cast packet to our data structure
+			messagePack* p = (messagePack*)rakClient.packet->data;
+
+			// Create the client
+			//User client(p->msgText, packet->systemAddress.ToString());
+
+			// Add the client to the user list
+			rakClient.users[rakClient.currentUsers] = rakClient.thisUser;
+
+			// increment current users
+			rakClient.currentUsers++;
+
+			// Print the message with the message string from the structure
+			char msgFormat [512];
+			sprintf(msgFormat, "%s has joined the chat!\n", p->msgText);
+			cChat.In(msgFormat);
+		}
+		break;
+
+		// Custom message loop for player disconnect
+		case ID_GAME_MSG_PLAYER_DISCONNECTED:
+		{
+			// Cast packet to our data structure
+			messagePack* p = (messagePack*)rakClient.packet->data;
+			// Print the message with the message string from the structure
+			char msgFormat[512];
+			sprintf(msgFormat, "Goodbye, %s\n", p->msgText);
+			cChat.In(msgFormat);
+		}
+		break;
+		// DAN
+		case ID_CHAT_MSG_REQUEST:
+		{
+			// cast packet to data
+			ChatMessageRequest* p = (ChatMessageRequest*)rakClient.packet->data;
+
+			// Name to designate in the message delivery
+			char senderName[512];
+			// control if we broadcast
+			bool isBroadcast = false;
+			// read through user database
+			for (int i = 0; i < rakClient.currentUsers; i++)
+			{
+				// check the system address against the one in the packet
+				if (rakClient.users[i].systemAddress == rakClient.packet->systemAddress.ToString())
+				{
+					// copy it on over
+					strcpy(senderName, rakClient.users[i].userName);
+				}
+			}
+
+			// check if we broadcastin
+			if (p->recieverUserName == "all")
+				isBroadcast = true;
+
+			// build message delivery data
+			ChatMessageDelivery msgDelivery(ID_CHAT_MSG_DELIVERY, senderName, isBroadcast, p->msgTxt);
+			rakClient.peer->Send((const char*)& msgDelivery, sizeof(msgDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, rakClient.packet->systemAddress, isBroadcast);
+		}
+		break;
+		// DAN
+		case ID_CHAT_MSG_DELIVERY:
+		{
+			// cast packet to data
+			ChatMessageDelivery* p = (ChatMessageDelivery*)rakClient.packet->data;
+			if (p->priv)
+			{
+				char msgFormat[512];
+				sprintf(msgFormat, "(Private) %s : %s", p->senderUserName, p->msgTxt);
+				cChat.In(msgFormat);
+			}
+			else
+			{
+				char msgFormat[512];
+				sprintf(msgFormat, "%s : %s", p->senderUserName, p->msgTxt);
+				cChat.In(msgFormat);
+			}
+		}
+		break;
+
+		case ID_CHAT_MSG_BROADCAST:
+		{
+			// Cast packet to our data structure
+			messagePack* p = (messagePack*)rakClient.packet->data;
+			// Print the message with the message string from the structure
+			cChat.In(p->msgText);
+		}
+		break;
+
+		default:
+			char msgFormat[512];
+			sprintf(msgFormat, "Message with identifier %i has arrived.\n", rakClient.packet->data[0]);
+			cChat.In(msgFormat);
+			break;
+		}
+	}
 }
 
 void a3DemoNetworking_send(a3_DemoState const* demoState) 
@@ -122,7 +393,7 @@ void a3DemoRenderTextChat(a3_DemoState const* demostate)
 	{
 		if (i >= 0 && i < cChat.bufferWriteLoc)
 		{
-			a3textDraw(demostate->text, textAlign, textOffset += textOffsetDelta, textDepth, 1, 1, 1, 1, "%s: %s", username, cChat.buffer[i]);
+			a3textDraw(demostate->text, textAlign, textOffset += textOffsetDelta, textDepth, 1, 1, 1, 1, "%s", cChat.buffer[i]);
 		}
 	}
 
@@ -147,13 +418,23 @@ void a3DemoUpdate(a3_DemoState const* demoState)
 		1. Init (if not connected)
 		2. Packet Handling 
 	3. Render Client
+	4. Clear last input buffer
 	*/
-	if (!client.connected && cChat.buffer[1] != "")
-		client.Init(cChat.buffer[1]);
+	if (!rakClient.connected)
+		a3DemoNetworking_init();
 	else
-		client.PacketHandling();
+		a3DemoNetworking_recieve();
+
+	/*
+	// Happens when player wants to disconnect from server
+	rakClient.peer->Shutdown(50, 0, LOW_PRIORITY);
+	// Destroy peer on disconnect (Happens before client closes)
+	RakNet::RakPeerInterface::DestroyInstance(rakClient.peer);
+	*/
 
 	a3DemoRenderClient(demoState);
+
+	cInput.ClearLastBuffer();
 }
 
 //-----------------------------------------------------------------------------
@@ -294,15 +575,11 @@ A3DYLIBSYMBOL a3_DemoState *a3demoCB_load(a3_DemoState *demoState, a3boolean hot
 			demoState->textMode = 1;
 			demoState->textModeCount = 3;	// 0=off, 1=controls, 2=data
 
-			// TO-DO Make actual prompt or something
-			cChat.In("Would you like to Join (J) or Host (H) a chat room? (D) to Disconnect");
-
 			// peer instance
-			// TO-DO Init peer on load
-			if (!client.peer)
+			if (!rakClient.peer)
 			{
-				client.peer = RakNet::RakPeerInterface::GetInstance();
-				if (client.peer)
+				rakClient.peer = RakNet::RakPeerInterface::GetInstance();
+				if (rakClient.peer)
 				{
 					// TO-DO
 				}
@@ -353,10 +630,10 @@ A3DYLIBSYMBOL a3_DemoState *a3demoCB_unload(a3_DemoState *demoState, a3boolean h
 		a3textRelease(demoState->text);
 
 		// unload peer when unloading
-		if (client.peer)
+		if (rakClient.peer)
 		{
-			RakNet::RakPeerInterface::DestroyInstance(client.peer);
-			client.peer = 0;
+			RakNet::RakPeerInterface::DestroyInstance(rakClient.peer);
+			rakClient.peer = 0;
 		}
 
 		/*
@@ -554,6 +831,9 @@ A3DYLIBSYMBOL void a3demoCB_keyCharPress(a3_DemoState *demoState, a3i32 asciiKey
 		// empty input buffer
 		cInput.ClearChatBuffer();
 		break;
+
+	case 27:
+		rakClient.connected = false;
 
 	// Remaining input
 	default:
