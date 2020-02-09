@@ -98,17 +98,12 @@ char username[512] = "Josh";
 
 //-----------------------------------------------------------------------------
 
-void a3DemoTestInput(a3_DemoState const* demoState) 
+void a3DemoNetworking_recieve(a3_DemoState const* demoState) 
 {
 
 }
 
-void a3DemoTestNetworking_recieve(a3_DemoState const* demoState) 
-{
-
-}
-
-void a3DemoTestNetworking_send(a3_DemoState const* demoState) 
+void a3DemoNetworking_send(a3_DemoState const* demoState) 
 {
 
 }
@@ -139,13 +134,21 @@ void a3DemoRenderClient(a3_DemoState const* demoState)
 {
 	// clear color
 	glClear(GL_COLOR_BUFFER_BIT);
-
+	// render chat
 	a3DemoRenderTextChat(demoState);
 }
 
 void a3DemoUpdate(a3_DemoState const* demoState) 
 {
-	a3DemoTestInput(demoState);
+	// Update Order
+	/* 
+	1. Input (done in idle before this is called)
+	2. RakNet Update
+		1. Init (if not connected)
+		2. Packet Handling 
+	3. Render Client
+	*/
+
 	a3DemoRenderClient(demoState);
 }
 
@@ -393,12 +396,12 @@ A3DYLIBSYMBOL a3i32 a3demoCB_idle(a3_DemoState *demoState)
 			//a3demo_input(demoState, demoState->renderTimer->secondsPerTick);
 			//a3demo_render(demoState);
 
-			// update input
+			// Update input
 			a3mouseUpdate(demoState->mouse);
 			a3keyboardUpdate(demoState->keyboard);
 			a3XboxControlUpdate(demoState->xcontrol);
 
-			// update
+			// Update
 			a3DemoUpdate(demoState);
 
 			// render occurred this idle: return +1
