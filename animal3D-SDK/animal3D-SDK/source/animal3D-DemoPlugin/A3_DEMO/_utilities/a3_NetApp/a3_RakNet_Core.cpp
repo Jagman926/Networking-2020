@@ -1,4 +1,5 @@
 #include "a3_RakNet_Core.h"
+#include "A3_DEMO/a3_Networking/a3_NetApp/a3_NetApp_Client.h"
 
 
 User::User(char name[], const char* sysAddress, UserType userType)
@@ -10,7 +11,7 @@ User::User(char name[], const char* sysAddress, UserType userType)
 }
 
 
-void RakClient::NetUpdate(bool connected)
+void RakClient::Init(char input [])
 {
 	// Initialize peer instance at start
 	peer = RakNet::RakPeerInterface::GetInstance();
@@ -22,7 +23,7 @@ void RakClient::NetUpdate(bool connected)
 		char inputedName[512] = "A";
 
 		// Join as Player
-		if (true)
+		if (input [0] == 'J' || input [0] == 'j')
 		{
 			// Start the Peer
 			RakNet::SocketDescriptor sd;
@@ -39,9 +40,12 @@ void RakClient::NetUpdate(bool connected)
 
 			// Set this rakclient to be a player
 			thisUser = player;
+
+			// clear input
+			memset(input, 0, sizeof input);
 		}
 		// Host a Game Room
-		else if (false)
+		else if (input[0] == 'H' || input[0] == 'h')
 		{
 			// init the server port
 			serverPort = 1;
@@ -67,12 +71,15 @@ void RakClient::NetUpdate(bool connected)
 
 			// Set this rakclient to be a server
 			thisUser = server;
+
+			// clear input
+			memset(input, 0, sizeof input);
 		}
 		else
 		{
 			// Disconnect
 			connected = false;
-			break;
+			//break;
 		}
 		// Server initialization
 		if (thisUser.type == SERVER)
@@ -81,7 +88,6 @@ void RakClient::NetUpdate(bool connected)
 
 			// We need to let the server accept incoming connections from the clients
 			peer->SetMaximumIncomingConnections(maxClients);
-
 
 		}
 		// Player initialization
@@ -93,15 +99,25 @@ void RakClient::NetUpdate(bool connected)
 			// TO-DO: Print "Starting Client!"
 			//hostSystemAddress = "184.171.150.100|1";
 			// TO-DO: Connect with the host value input by user
-			//peer->Connect(INPUT_VALUE, serverPort, 0, 0);
+			peer->Connect("127.0.0.1", serverPort, 0, 0);
 		}
+	}
+	
+}
+
+void RakClient::Update()
+{
+	if (!connected)
+	{
+		Init();
 	}
 	else
 	{
+		PacketHandling();
 	}
 }
 
-char* RakClient::PacketHandling(bool connected)
+char* RakClient::PacketHandling()
 {
 	// For loop for reading packet information
 	for (packet = peer->Receive(); packet; peer->DeallocatePacket(packet), packet = peer->Receive())
@@ -181,10 +197,10 @@ char* RakClient::PacketHandling(bool connected)
 			messagePack* p = (messagePack*)packet->data;
 
 			// Create the client
-			User client(p->msgText, packet->systemAddress.ToString());
+			//User client(p->msgText, packet->systemAddress.ToString());
 
 			// Add the client to the user list
-			users[currentUsers] = client;
+			users[currentUsers] = thisUser;
 
 			// increment current users
 			currentUsers++;
@@ -272,100 +288,100 @@ char* RakClient::PacketHandling(bool connected)
 
 	// DAN
 	// get input	
-	msg = "";
-	printf("Input command: ");
-	// TODO: switch to fgets, make msg a char[]
-	std::cin >> msg;
-
-	// if command is being input; 47 = '/'
-	if (msg.at(0) == '/')
-	{
-		// string to hold our command that we will split up
-		std::string command;
-
-		// gets string from after / to first space
-		command = msg.substr(1, msg.find(' '));
-
-		/* ------------------------------------------------------------------------------------------------------- */
-		/*                                            SERVER ONLY COMMANDS                                         */
-		/* ------------------------------------------------------------------------------------------------------- */
-
-		// Prints out user name and IP of all connected users to host console, including host
-		if (isServer && command == "users")
-		{
-			for (int i = 0; i < currentUsers; i++)
-			{
-				printf("User: %s | Address: %s\n", users[i].userName, users[i].systemAddress.c_str());
-			}
-		}
-
-		/* ------------------------------------------------------------------------------------------------------- */
-		/*                                            USER COMMANDS                                                */
-		/* ------------------------------------------------------------------------------------------------------- */
-
-		// Outputs all messaging/command types
-		else if (command == "help")
-		{
-			printf("Commands\n/disconnect - Disconnect from the server\n/msg all: - Broadcast message to all users\n/msg [name]: - Sends a private message to the specified user\n");
-			if (isServer)
-			{
-				printf("\nAdmin Commands\n/ users - Display all usernames & IP\n");
-			}
-
-		}
-		else if (command == "msg")
-		{
-			// string to hold the user name to send to
-			char user[512];
-			char message[512];
-			strcpy(user, msg.c_str());
-			char* parse;
-			// gets string from space to : 
-			// TODO: Figure out correct parsing
-			parse = strtok(user, "");
-			parse = strtok(parse, " ");
-
-			// Create our private message request
-			ChatMessageRequest messageRequest(ID_CHAT_MSG_REQUEST, user, message);
-			// Send to host
-			peer->Send((const char*)&messageRequest, sizeof(messageRequest), HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
-		}
-
-		else if (command == "all")
-		{
-			// string to hold the user name to send to
-			std::string  message;
-
-			message = msg.substr(msg.find("all") + 1);
-
-			// Create our private message request
-			ChatMessageRequest messageRequest(ID_CHAT_MSG_REQUEST, "all", message.c_str());
-			// Send to host
-			peer->Send((const char*)&messageRequest, sizeof(messageRequest), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)hostSystemAddress.c_str(), false);
-		}
-		else if (command == "disconnect")
-		{
-			// Prompt for disconnect message
-			printf("Are you sure? Y/N: ");
-			// Get input
-			fgets(str, 512, stdin);
-			// if yes,
-			if ((str[0] == 'y') || (str[0] == 'Y'))
-			{
-				// Create data structure and initialize with our message identifier and message, in this case the user inputted client name
-				messagePack pack(ID_GAME_MSG_PLAYER_DISCONNECTED, clientName);
-				// Send the data structure to the server by casting it to a byte stream using const char* and passing the size of our data structure
-				peer->Send((const char*)&pack, sizeof(pack), HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
-				// Set to disconnect from server after loop is finished
-				connected = false;
-			}
-		}
-		else
-		{
-			printf("%s is an invalid command! Type /help to see list of all commands\n", command.c_str());
-		}
-
-	}
+	//msg = "";
+	//printf("Input command: ");
+	//// TODO: switch to fgets, make msg a char[]
+	////std::cin >> msg;
+	//
+	//// if command is being input; 47 = '/'
+	//if (msg.at(0) == '/')
+	//{
+	//	// string to hold our command that we will split up
+	//	std::string command;
+	//
+	//	// gets string from after / to first space
+	//	command = msg.substr(1, msg.find(' '));
+	//
+	//	/* ------------------------------------------------------------------------------------------------------- */
+	//	/*                                            SERVER ONLY COMMANDS                                         */
+	//	/* ------------------------------------------------------------------------------------------------------- */
+	//
+	//	// Prints out user name and IP of all connected users to host console, including host
+	//	if (thisUser.type == SERVER && command == "users")
+	//	{
+	//		for (int i = 0; i < currentUsers; i++)
+	//		{
+	//			//printf("User: %s | Address: %s\n", users[i].userName, users[i].systemAddress.c_str());
+	//		}
+	//	}
+	//
+	//	/* ------------------------------------------------------------------------------------------------------- */
+	//	/*                                            USER COMMANDS                                                */
+	//	/* ------------------------------------------------------------------------------------------------------- */
+	//
+	//	// Outputs all messaging/command types
+	//	else if (command == "help")
+	//	{
+	//		printf("Commands\n/disconnect - Disconnect from the server\n/msg all: - Broadcast message to all users\n/msg [name]: - Sends a private message to the specified user\n");
+	//		if (thisUser.type == SERVER)
+	//		{
+	//			printf("\nAdmin Commands\n/ users - Display all usernames & IP\n");
+	//		}
+	//
+	//	}
+	//	else if (command == "msg")
+	//	{
+	//		// string to hold the user name to send to
+	//		char user[512];
+	//		char message[512];
+	//		strcpy(user, msg.c_str());
+	//		char* parse;
+	//		// gets string from space to : 
+	//		// TODO: Figure out correct parsing
+	//		parse = strtok(user, "");
+	//		parse = strtok(parse, " ");
+	//
+	//		// Create our private message request
+	//		ChatMessageRequest messageRequest(ID_CHAT_MSG_REQUEST, user, message);
+	//		// Send to host
+	//		peer->Send((const char*)&messageRequest, sizeof(messageRequest), HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
+	//	}
+	//
+	//	else if (command == "all")
+	//	{
+	//		// string to hold the user name to send to
+	//		std::string  message;
+	//
+	//		message = msg.substr(msg.find("all") + 1);
+	//
+	//		// Create our private message request
+	//		ChatMessageRequest messageRequest(ID_CHAT_MSG_REQUEST, "all", message.c_str());
+	//		// Send to host
+	//		//peer->Send((const char*)&messageRequest, sizeof(messageRequest), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)hostSystemAddress.c_str(), false);
+	//	}
+	//	else if (command == "disconnect")
+	//	{
+	//		// Prompt for disconnect message
+	//		printf("Are you sure? Y/N: ");
+	//		// Get input
+	//		fgets(str, 512, stdin);
+	//		// if yes,
+	//		if ((str[0] == 'y') || (str[0] == 'Y'))
+	//		{
+	//			// Create data structure and initialize with our message identifier and message, in this case the user inputted client name
+	//			messagePack pack(ID_GAME_MSG_PLAYER_DISCONNECTED, thisUser.userName);
+	//			// Send the data structure to the server by casting it to a byte stream using const char* and passing the size of our data structure
+	//			peer->Send((const char*)&pack, sizeof(pack), HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
+	//			// Set to disconnect from server after loop is finished
+	//			connected = false;
+	//		}
+	//	}
+	//	else
+	//	{
+	//		printf("%s is an invalid command! Type /help to see list of all commands\n", command.c_str());
+	//	}
+	//
+	//}
 	// If set to disconnect, shutdown connection between server
 	if (!connected)
 		peer->Shutdown(50, 0, LOW_PRIORITY);

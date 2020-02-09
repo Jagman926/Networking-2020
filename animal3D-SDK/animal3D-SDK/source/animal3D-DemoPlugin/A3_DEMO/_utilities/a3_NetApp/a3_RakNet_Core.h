@@ -150,6 +150,9 @@ struct RakClient
 	// string for host system address
 	char hostSystemAddress[512];
 
+	// check conncetion
+	bool connected = false;
+
 	// Peer to use for this instance of the program
 	RakNet::RakPeerInterface* peer;
 
@@ -159,10 +162,14 @@ struct RakClient
 	// FUNCTIONS
 	
 
-	// Runs the main networking loop of the program
-	void NetUpdate(bool connected);
+	
+	// Update the RakNet utilities
+	void Update();
+	// Initialization loop if not connected
+	void Init(char input[]);
 	// Handles packets in a for loop
-	char* PacketHandling(bool connected);
+	char* PacketHandling();
+	
 };
 
 #endif // !RAKNET_CORE_H
