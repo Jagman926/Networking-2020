@@ -148,6 +148,10 @@ void a3DemoUpdate(a3_DemoState const* demoState)
 		2. Packet Handling 
 	3. Render Client
 	*/
+	if (!client.connected && cChat.buffer[1] != "")
+		client.Init(cChat.buffer[1]);
+	else
+		client.PacketHandling();
 
 	a3DemoRenderClient(demoState);
 }
@@ -289,6 +293,9 @@ A3DYLIBSYMBOL a3_DemoState *a3demoCB_load(a3_DemoState *demoState, a3boolean hot
 			demoState->textInit = 1;
 			demoState->textMode = 1;
 			demoState->textModeCount = 3;	// 0=off, 1=controls, 2=data
+
+			// TO-DO Make actual prompt or something
+			cChat.In("Would you like to Join (J) or Host (H) a chat room? (D) to Disconnect");
 
 			// peer instance
 			// TO-DO Init peer on load

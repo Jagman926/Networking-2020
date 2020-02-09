@@ -71,9 +71,6 @@ void RakClient::Init(char input [])
 
 			// Set this rakclient to be a server
 			thisUser = server;
-
-			// clear input
-			memset(input, 0, sizeof input);
 		}
 		else
 		{
@@ -109,7 +106,7 @@ void RakClient::Update()
 {
 	if (!connected)
 	{
-		Init();
+		//Init();
 	}
 	else
 	{
@@ -129,17 +126,17 @@ char* RakClient::PacketHandling()
 			/* ------------------------------------------------------------------------------------------------------- */
 
 		case ID_REMOTE_DISCONNECTION_NOTIFICATION:
-			printf("Another client has disconnected.\n");
+			return "Another client has disconnected";
 			break;
 		case ID_REMOTE_CONNECTION_LOST:
-			printf("Another client has lost the connection.\n");
+			return "Another client has lost the connection";
 			break;
 		case ID_REMOTE_NEW_INCOMING_CONNECTION:
-			printf("Another client has connected.\n");
+			return "Another client has connected";
 			break;
 		case ID_CONNECTION_REQUEST_ACCEPTED:
 		{
-			printf("Our connection request has been accepted.\n");
+			return "Our connection request has been accepted"; // TO-DO LOL
 			// Prompt for player's name
 			printf("Type your name: ");
 			// Read their input and store it
@@ -154,25 +151,25 @@ char* RakClient::PacketHandling()
 		}
 		break;
 		case ID_NEW_INCOMING_CONNECTION:
-			printf("A connection is incoming.\n");
+			return "A connection is incoming";
 			break;
 		case ID_NO_FREE_INCOMING_CONNECTIONS:
-			printf("The server is full.\n");
+			return "The server is full";
 			break;
 		case ID_DISCONNECTION_NOTIFICATION:
 			if (thisUser.type == SERVER) {
-				printf("A client has disconnected.\n");
+				return "A client has disconnected";
 			}
 			else {
-				printf("We have been disconnected.\n");
+				return "We have been disconnected";
 			}
 			break;
 		case ID_CONNECTION_LOST:
 			if (thisUser.type == SERVER) {
-				printf("A client lost the connection.\n");
+				return "A client lost the connection";
 			}
 			else {
-				printf("Connection lost.\n");
+				return "Connection lost";
 			}
 			break;
 
