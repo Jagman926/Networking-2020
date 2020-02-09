@@ -88,7 +88,8 @@ struct a3_DemoState
 };
 //-----------------------------------------------------------------------------
 
-ChatText chat;
+ClientChat cChat;
+ClientInput cInput;
 RakClient client;
 
 // Peer User Variables --------------------------------------------------------
@@ -122,31 +123,30 @@ void a3DemoRenderTextChat(a3_DemoState const* demostate)
 
 	// Renders chat log
 	int i;
-	for (i = chat.chatOffset; i < chat.chatOffset + chat.CHAT_VIEW_MAX; i++)
+	for (i = cChat.bufferViewOffset; i < cChat.bufferViewOffset + cChat.CHAT_VIEW_MAX; i++)
 	{
-		if (i >= 0 && i < chat.chatLoc)
+		if (i >= 0 && i < cChat.bufferWriteLoc)
 		{
-			a3textDraw(demostate->text, textAlign, textOffset += textOffsetDelta, textDepth, 1, 1, 1, 1, "%s: %s", username, chat.chatBuffer[i]);
+			a3textDraw(demostate->text, textAlign, textOffset += textOffsetDelta, textDepth, 1, 1, 1, 1, "%s: %s", username, cChat.buffer[i]);
 		}
 	}
+
+	// Renders users typebox
+	a3textDraw(demostate->text, -0.98f, -0.95f, -1.0f, 1, 1, 1, 1, cInput.buffer);
 }
 
-void a3DemoTestRender(a3_DemoState const* demoState)
+void a3DemoRenderClient(a3_DemoState const* demoState)
 {
 	// clear color
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	// draw some text (Just look at a3_DemoState_idle-render.c (~170))
 	a3DemoRenderTextChat(demoState);
-
-	// Renders user current typing area
-	a3textDraw(demoState->text, -0.98f, -0.95f, -1.0f, 1, 1, 1, 1, chat.inputBuffer);
 }
 
-void a3DemoTestUpdate(a3_DemoState const* demoState) 
+void a3DemoUpdate(a3_DemoState const* demoState) 
 {
 	a3DemoTestInput(demoState);
-	a3DemoTestRender(demoState);
+	a3DemoRenderClient(demoState);
 }
 
 //-----------------------------------------------------------------------------
@@ -399,7 +399,7 @@ A3DYLIBSYMBOL a3i32 a3demoCB_idle(a3_DemoState *demoState)
 			a3XboxControlUpdate(demoState->xcontrol);
 
 			// update
-			a3DemoTestUpdate(demoState);
+			a3DemoUpdate(demoState);
 
 			// render occurred this idle: return +1
 			return +1;
@@ -524,32 +524,31 @@ A3DYLIBSYMBOL void a3demoCB_keyCharPress(a3_DemoState *demoState, a3i32 asciiKey
 	{
 	// Backspace
 	case 8:
-		if (chat.bufferLoc != 0)
+		if (cInput.bufferWriteLoc != 0)
 		{
-			chat.bufferLoc--;
-			chat.inputBuffer[chat.bufferLoc] = 0;
+			// Remove previous input value
+			cInput.ClearLastValue();
 		}
 		break;
 
 	// Carriage return (Enter)
 	case 13:
-
-		// TO-DO Add message to chat buffer here
-
-		// TO-DO Parse input and do whatever
-
+		// Make sure line isn't empty
+		if (cInput.buffer[0] != 0)
+		{
+			// Add input buffer to chat buffer
+			cChat.In(cInput.buffer);
+			// TO-DO Parse input and do whatever
+		}
 
 		// empty input buffer
-		memset(chat.inputBuffer, 0, sizeof chat.inputBuffer);
-		// reset input buffer current location
-		chat.bufferLoc = 0;
+		cInput.ClearChatBuffer();
 		break;
 
 	// Remaining input
 	default:
-		// if there is input, add it to input buffer
-		chat.inputBuffer[chat.bufferLoc] = asciiKey;
-		chat.bufferLoc++;
+		// If there is input, add it to input buffer
+		cInput.In(asciiKey);
 		break;
 	}
 
@@ -665,18 +664,17 @@ A3DYLIBSYMBOL void a3demoCB_keyCharHold(a3_DemoState *demoState, a3i32 asciiKey)
 	{
 	// Backspace
 	case 8:
-		if (chat.bufferLoc != 0)
+		if (cInput.bufferWriteLoc != 0)
 		{
-			chat.bufferLoc--;
-			chat.inputBuffer[chat.bufferLoc] = 0;
+			// Remove previous input value
+			cInput.ClearLastValue();
 		}
 		break;
 
 	// Remaining input
 	default:
-		// if there is input, add it to input buffer
-		chat.inputBuffer[chat.bufferLoc] = asciiKey;
-		chat.bufferLoc++;
+		// If there is input, add it to input buffer
+		cInput.In(asciiKey);
 		break;
 	}
 
@@ -727,7 +725,7 @@ A3DYLIBSYMBOL void a3demoCB_mouseWheel(a3_DemoState *demoState, a3i32 delta, a3i
 	a3mouseSetPosition(demoState->mouse, cursorX, cursorY);
 
 	// set view location if scrolling
-	chat.chatOffset = max(0, min(chat.chatLoc - chat.CHAT_VIEW_MAX, chat.chatOffset + (-1 * delta)));
+	cChat.bufferViewOffset = max(0, min(cChat.bufferWriteLoc - cChat.CHAT_VIEW_MAX, cChat.bufferViewOffset + (-1 * delta)));
 
 	/*
 	switch (demoState->demoMode)

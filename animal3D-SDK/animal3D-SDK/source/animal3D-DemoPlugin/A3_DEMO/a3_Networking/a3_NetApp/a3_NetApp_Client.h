@@ -1,26 +1,41 @@
 #ifndef A3_NETAPP_CLIENT_H
 #define A3_NETAPP_CLIENT_H
 
-/* --------------- Text Rendering Variables ----------------------- */
+/* --------------- Client Sub Structures ----------------------- */
 
-struct ChatText
+struct ClientChat
 {
 public:
 	// const variables
 	const int CHAT_VIEW_MAX = 22;
-	// Input container
-	char inputBuffer[512];
-	int bufferLoc = 0;
+
 	// Chat container
-	char chatBuffer[512][512];
-	int chatLoc = 0;
-	int chatOffset = 0;
+	char buffer[512][512];
+	int bufferWriteLoc;
+	int bufferViewOffset;
 
 	//constructors
-	ChatText() {};
+	ClientChat() { bufferWriteLoc = 0, bufferViewOffset = 0; };
+
+	// Functions
+	void In(char buffer[512]);
+	void ClearChatBuffer();
+};
+
+struct ClientInput
+{
+public:
+	// Input container
+	char buffer[512];
+	int bufferWriteLoc;
+
+	//constructors
+	ClientInput() { bufferWriteLoc = 0; };
 
 	//
-	void Output(char buffer[512]);
+	void In(int asciiValue);
+	void ClearLastValue();
+	void ClearChatBuffer();
 };
 
 #endif // !A3_NETAPP_CLIENT_H
