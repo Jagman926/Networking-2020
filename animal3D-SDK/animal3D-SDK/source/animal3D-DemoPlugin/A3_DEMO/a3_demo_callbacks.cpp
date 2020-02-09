@@ -87,6 +87,11 @@ struct a3_DemoState
 	a3_Timer renderTimer[1];
 };
 
+// Multi-Instance Notes
+// main_win.c
+// line 70 is single instance
+// line 72-73 is multi instance
+
 // Client Variable Structures ----------------------------------------------------------
 
 ClientChat cChat;
@@ -185,8 +190,10 @@ void a3DemoNetworking_init()
 			// Server initialization
 			if (rakClient.thisUser.type == SERVER)
 			{
+				// Clear chat
+				cChat.ClearChatBuffer();
 				// Notify starting server
-				cChat.In("Starting the Server!");
+				cChat.In("Server Started!");
 				// Set connected
 				rakClient.connected = true;
 				// We need to let the server accept incoming connections from the clients
@@ -206,8 +213,10 @@ void a3DemoNetworking_init()
 						rakClient.peer->Connect("127.0.0.1", rakClient.serverPort, 0, 0);
 					else
 						rakClient.peer->Connect(cInput.lastInputBuffer, rakClient.serverPort, 0, 0);
+					// Clear chat
+					cChat.ClearChatBuffer();
 					// Notify starting client
-					cChat.In("Starting Client!");
+					cChat.In("Client Starting!");
 					// Set connected
 					rakClient.connected = true;
 				}
@@ -292,7 +301,6 @@ void a3DemoNetworking_recieve()
 			char msgFormat [512];
 			sprintf(msgFormat, "%s has joined the chat!\n", p->msgText);
 			cChat.In(msgFormat);
-			free(msgFormat);
 		}
 		break;
 
@@ -305,7 +313,6 @@ void a3DemoNetworking_recieve()
 			char msgFormat[512];
 			sprintf(msgFormat, "Goodbye, %s\n", p->msgText);
 			cChat.In(msgFormat);
-			free(msgFormat);
 		}
 		break;
 		// DAN
@@ -348,14 +355,12 @@ void a3DemoNetworking_recieve()
 				char msgFormat[512];
 				sprintf(msgFormat, "(Private) %s : %s", p->senderUserName, p->msgTxt);
 				cChat.In(msgFormat);
-				free(msgFormat);
 			}
 			else
 			{
 				char msgFormat[512];
 				sprintf(msgFormat, "%s : %s", p->senderUserName, p->msgTxt);
 				cChat.In(msgFormat);
-				free(msgFormat);
 			}
 		}
 		break;

@@ -67,7 +67,10 @@ int APIENTRY wWinMain(
 	a3i32 status = 0;
 
 	// initialize app
-	status = a3appStartSingleInstanceSwitchExisting(wndClassName, wndName);
+	//status = a3appStartSingleInstanceSwitchExisting(wndClassName, wndName);
+
+	HANDLE tmp[1];
+	status = a3appStartMultipleInstance(tmp, wndName, 3);
 
 	// register window class
 	status = a3windowCreateDefaultRenderingClass(&wndClass, hInstance, wndClassName, sizeof(void *), IDI_ICON1, IDI_ICON1);
