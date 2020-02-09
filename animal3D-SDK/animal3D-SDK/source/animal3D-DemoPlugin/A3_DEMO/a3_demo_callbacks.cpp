@@ -98,13 +98,29 @@ ClientChat cChat;
 ClientInput cInput;
 RakClient rakClient;
 
-// Peer User Variables --------------------------------------------------------
+// Lobby Prompts ---------------------------------------------------------
 
-// Prompts ---------------------------------------------------------
+char userNamePrompt[512];
+char userTypePrompt[512];
+char ipConnectPrompt[512];
 
-char userNamePrompt[512] = "Enter Username";
-char userTypePrompt[512] = "Would you like to Join (J) or Host (H) a chat room? (D) to Disconnect";
-char ipConnectPrompt[512] = "Enter server IP or (L) for 127.0.0.1";
+void a3DemoNetworking_lobby_init()
+{
+	// Set connected to false
+	rakClient.connected = false;
+
+	// Reset lobby prompts
+	strcpy(userNamePrompt, "Enter Username");
+	strcpy(userTypePrompt, "Would you like to Join (J) or Host (H) a chat room? (D) to Disconnect");
+	strcpy(ipConnectPrompt, "Enter server IP or (L) for 127.0.0.1");
+
+	// Reset username and usertype (inputted from prompts in lobby)
+	memset(rakClient.thisUser.userName, 0, sizeof rakClient.thisUser.userName);
+	rakClient.thisUser.type = UserType::NONE;
+
+	// Clear any remaining chat history from previous chats
+	cChat.ClearChatBuffer();
+}
 
 void a3DemoNetworking_init()
 {
@@ -376,19 +392,116 @@ void a3DemoNetworking_recieve()
 
 		default:
 			char msgFormat[512];
-			sprintf(msgFormat, "Message with identifier %i has arrived.\n", rakClient.packet->data[0]);
+			sprintf(msgFormat, "Message with identifier %i has arrived", rakClient.packet->data[0]);
 			cChat.In(msgFormat);
 			break;
 		}
 	}
 }
 
-void a3DemoNetworking_send() 
+void a3DemoNetworking_send(char message [512]) 
 {
+	// Parsing variables
+	char commandDelimiters[] = " /\n\r";
+	char messageDelimiters[] = "\n\r";
+	// Parsed information
+	char* command;
+	char* remainingMsg;
+
+
 	// If preceeded with '/', then it is a send command
 	if (cInput.lastInputBuffer[0] == '/')
 	{
+		// Parse for command name
+		command = strtok(message, commandDelimiters);
+		// Save message text
+		remainingMsg = strtok(NULL, messageDelimiters);
+		
+		// ------------------------------- Client Commands ------------------------------------
 
+		// -------- All Message ---------
+		if (strcmp(command, "all") == 0)
+		{
+			// Output message
+			char msgFormat[512];
+			sprintf(msgFormat, "Message To All: %s", remainingMsg);
+			cChat.In(msgFormat);
+
+			// SEND
+			// Create our private message request
+			ChatMessageRequest messageRequest(ID_CHAT_MSG_REQUEST, command, remainingMsg);
+			// Send to host
+			rakClient.peer->Send((const char*)&messageRequest, sizeof(messageRequest), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.hostSystemAddress, false);
+		}
+		// ------ Private Message -------
+		else if (strcmp(command, "msg") == 0)
+		{
+			char* user;
+			// getUsersName
+			user = strtok(remainingMsg, commandDelimiters);
+			// Save message text
+			remainingMsg = strtok(NULL, messageDelimiters);
+
+			// Output user
+			char msgFormat[512];
+			sprintf(msgFormat, "Message to %s: %s", user, remainingMsg);
+			cChat.In(msgFormat);
+
+			// SEND
+			// Create our private message request
+			ChatMessageRequest messageRequest(ID_CHAT_MSG_REQUEST, user, remainingMsg);
+			// Send to host
+			rakClient.peer->Send((const char*)&messageRequest, sizeof(messageRequest), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.hostSystemAddress, false);
+		}
+		// ------ Clear Chat History -------
+		else if (strcmp(command, "clear") == 0)
+		{
+			cChat.ClearChatBuffer();
+		}
+		// ----------- Help ------------
+		else if (strcmp(command, "help") == 0)
+		{
+			if (rakClient.thisUser.type == UserType::SERVER)
+			{
+				cChat.In("Admin Commands:");
+				cChat.In("   /users: output all usernames and corresponding system address");
+			}
+			cChat.In("Client Commands:");
+			cChat.In("   /all: send message to all members of chat");
+			cChat.In("   /msg [username]: send private message to user");
+			cChat.In("   /clear: clear chat history");
+			cChat.In("   /exit: disconnect from server");
+		}
+		// -------- Disconnect ---------
+		else if (strcmp(command, "exit") == 0)
+		{
+			// Create data structure and initialize with our message identifier and message, in this case the user inputted client name
+			messagePack pack(ID_GAME_MSG_PLAYER_DISCONNECTED, rakClient.thisUser.userName);
+			// Send the data structure to the server by casting it to a byte stream using const char* and passing the size of our data structure
+			rakClient.peer->Send((const char*)& pack, sizeof(pack), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.hostSystemAddress, false);
+			// Init lobby
+			a3DemoNetworking_lobby_init();
+		}
+
+		// ------------------------------- Host Only Commands ------------------------------------
+
+		// -------- User Output --------
+		else if (rakClient.thisUser.type == UserType::SERVER && strcmp(command, "users") == 0)
+		{
+			for (int i = 0; i < rakClient.currentUsers; i++)
+			{
+				char msgFormat[512];
+				sprintf(msgFormat, "User: %s | Address: %s", rakClient.users[i].userName, rakClient.users[i].systemAddress);
+				cChat.In(msgFormat);
+			}
+		}
+		// Invalid command
+		else
+		{
+			char msgFormat[512];
+			sprintf(msgFormat, "%s is an invalid command, type /help to see valid commands", command);
+			cChat.In(msgFormat);
+		}
 	}
 }
 
@@ -442,7 +555,7 @@ void a3DemoUpdate(a3_DemoState const* demoState)
 		// Packet handling
 		a3DemoNetworking_recieve();
 		// Input parse and Send
-		a3DemoNetworking_send();
+		a3DemoNetworking_send(cInput.lastInputBuffer);
 	}
 
 	/*
@@ -602,7 +715,7 @@ A3DYLIBSYMBOL a3_DemoState *a3demoCB_load(a3_DemoState *demoState, a3boolean hot
 				rakClient.peer = RakNet::RakPeerInterface::GetInstance();
 				if (rakClient.peer)
 				{
-					// TO-DO
+					a3DemoNetworking_lobby_init();
 				}
 			}
 
