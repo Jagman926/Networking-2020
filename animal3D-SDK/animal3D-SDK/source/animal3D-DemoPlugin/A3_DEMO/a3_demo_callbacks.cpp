@@ -335,6 +335,10 @@ void a3DemoNetworking_recieve()
 			// Print the message with the message string from the structure
 			sprintf(msgFormat, "%s has joined the chat!", p->msgText);
 			cChat.In(msgFormat);
+
+			// Send to all users
+			messagePack msgDelivery(ID_CHAT_MSG_BROADCAST, msgFormat);
+			rakClient.peer->Send((const char*)& msgDelivery, sizeof(msgDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, rakClient.packet->systemAddress, true);
 		}
 		break;
 
@@ -344,8 +348,12 @@ void a3DemoNetworking_recieve()
 			// Cast packet to our data structure
 			messagePack* p = (messagePack*)rakClient.packet->data;
 			// Print the message with the message string from the structure
-			sprintf(msgFormat, "Goodbye, %s", p->msgText);
+			sprintf(msgFormat, "%s has left the chat", p->msgText);
 			cChat.In(msgFormat);
+
+			// Send to all users
+			messagePack msgDelivery(ID_CHAT_MSG_BROADCAST, msgFormat);
+			rakClient.peer->Send((const char*)& msgDelivery, sizeof(msgDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, rakClient.packet->systemAddress, true);
 		}
 		break;
 		// DAN
@@ -394,8 +402,11 @@ void a3DemoNetworking_recieve()
 				else
 				{
 					// Output message for host
-					sprintf(msgFormat, "(Private) %s to %s: %s", senderName, p->recieverUserName, p->msgTxt);
-					cChat.In(msgFormat);
+					if (strcmp(recieverSystemAddress, rakClient.thisUser.systemAddress))
+					{
+						sprintf(msgFormat, "(Private) %s to %s: %s", senderName, p->recieverUserName, p->msgTxt);
+						cChat.In(msgFormat);
+					}
 					// build message delivery data
 					ChatMessageDelivery msgDelivery(ID_CHAT_MSG_DELIVERY, senderName, true, p->msgTxt);
 					rakClient.peer->Send((const char*)& msgDelivery, sizeof(msgDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)recieverSystemAddress, false);
