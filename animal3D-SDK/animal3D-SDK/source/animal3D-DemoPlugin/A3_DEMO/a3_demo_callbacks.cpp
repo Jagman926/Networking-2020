@@ -378,9 +378,13 @@ void a3DemoNetworking_recieve()
 	}
 }
 
-void a3DemoNetworking_send(a3_DemoState const* demoState) 
+void a3DemoNetworking_send() 
 {
+	// If preceeded with '/', then it is a send command
+	if (cInput.lastInputBuffer[0] == '/')
+	{
 
+	}
 }
 
 void a3DemoRenderTextChat(a3_DemoState const* demostate)
@@ -421,13 +425,20 @@ void a3DemoUpdate(a3_DemoState const* demoState)
 	2. RakNet Update
 		1. Init (if not connected)
 		2. Packet Handling 
+		3. Input Parse -> Send
 	3. Render Client
 	4. Clear last input buffer
 	*/
+
 	if (!rakClient.connected)
 		a3DemoNetworking_init();
 	else
+	{
+		// Packet handling
 		a3DemoNetworking_recieve();
+		// Input parse and Send
+		a3DemoNetworking_send();
+	}
 
 	/*
 	// Happens when player wants to disconnect from server
@@ -436,8 +447,9 @@ void a3DemoUpdate(a3_DemoState const* demoState)
 	RakNet::RakPeerInterface::DestroyInstance(rakClient.peer);
 	*/
 
+	// Render all text for screen
 	a3DemoRenderClient(demoState);
-
+	// Clear last buffer input (the input that was entered this frame)
 	cInput.ClearLastBuffer();
 }
 
