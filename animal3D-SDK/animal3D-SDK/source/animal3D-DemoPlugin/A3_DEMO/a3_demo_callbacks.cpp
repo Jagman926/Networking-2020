@@ -369,7 +369,7 @@ void a3DemoNetworking_recieve()
 			rakClient.peer->Send((const char*)& msgDelivery, sizeof(msgDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, rakClient.packet->systemAddress, true);
 		}
 		break;
-		// DAN
+		
 		case ID_CHAT_MSG_REQUEST:
 		{
 			// cast packet to data
@@ -453,12 +453,71 @@ void a3DemoNetworking_recieve()
 		}
 		break;
 
+		case ID_KICK:
+		{
+
+			char msgFormat[512];
+			// Display next player
+			sprintf(msgFormat, "%s has been kicked!", rakClient.thisUser.userName);
+			// Send to all users
+			messagePack msgDelivery(ID_CHAT_MSG_BROADCAST, msgFormat);
+			rakClient.peer->Send((const char*)&msgDelivery, sizeof(msgDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.thisUser.systemAddress, true);
+
+			
+			// Init lobby
+			a3DemoNetworking_lobby_init();
+		}
+		break;
+
 		case ID_GAME_CHALLENGE:
 		{
 			// Packet to data struct
-			ChatMessageDelivery* p = (ChatMessageDelivery*)rakClient.packet->data;
+			GameDelivery* p = (GameDelivery*)rakClient.packet->data;
 			// Print the message with the message string from the structure
 			cChat.In(p->msgTxt);
+			
+			// init the local instance of the game for the client
+			gameInstance = Game(p->challenger1, p->challenger2, false, GameType::TICTACTOE);
+			// set game as in progress
+			gameInstance.inProgress = true;
+			// init a board of tic tac toe
+			gameInstance.ticTacToe.ResetBoard();
+			// set turn index of player
+			gameInstance.ticTacToe.turnIndex = p->playerTurnIndex;
+
+			break;
+		}
+		case ID_GAME_DELIVERY:
+		{
+			GameDelivery* p = (GameDelivery*)rakClient.packet->data;
+			// print the text in the message
+			cChat.In(p->msgTxt);
+			// set the space based on inputted number
+			gameInstance.ticTacToe.SetSpace(p->boardIndex, gameInstance.ticTacToe.GetPlayerSpaceType());
+			// go to next turn
+			gameInstance.ticTacToe.NextTurn();
+
+			char recieverSystemAddress[512];
+			// read through user database
+			for (int i = 0; i < rakClient.currentUsers; i++)
+			{
+				if (strcmp(rakClient.users[i].userName, gameInstance.players[gameInstance.ticTacToe.turnIndex]) == 0)
+					strcpy(recieverSystemAddress, rakClient.users[i].systemAddress);
+			}
+
+			if (strcmp(recieverSystemAddress, rakClient.users[0].systemAddress) == 0)
+			{
+				// Send the ENTIRE game back to server
+				GameDelivery gameDelivery(ID_GAME_DELIVERY, rakClient.thisUser.userName, "TicTacToe: Its your turn", p->boardIndex, gameInstance.ticTacToe.turnIndex, p->challenger1, p->challenger2);
+				rakClient.peer->Send((const char*)&gameDelivery, sizeof(gameDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.hostSystemAddress, false);
+			}
+			else
+			{
+				// Send the ENTIRE game back to server
+				GameDelivery gameDelivery(ID_GAME_DELIVERY, rakClient.thisUser.userName, "TicTacToe: Its your turn", p->boardIndex, gameInstance.ticTacToe.turnIndex, p->challenger1, p->challenger2);
+				rakClient.peer->Send((const char*)&gameDelivery, sizeof(gameDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)recieverSystemAddress, false);
+			}
+			
 
 			break;
 		}
@@ -565,35 +624,86 @@ void a3DemoNetworking_send(char message [512])
 			{
 				cChat.In("Admin Commands:");
 				cChat.In("   /users: output all usernames and corresponding system address");
+				cChat.In("   /kick [username]: kicks specified user from lobby");
+
+				cChat.In("Game Commands:");
+				cChat.In("   /challenge [user1] [user2] [TicTacToe/Checkers]: start an online game");
+				cChat.In("   /play [TicTacToe/Checkers]: starts a local game");
 			}
 			cChat.In("Client Commands:");
 			cChat.In("   /all: send message to all members of chat");
 			cChat.In("   /msg [username]: send private message to user");
 			cChat.In("   /clear: clear chat history");
 			cChat.In("   /exit: disconnect from server");
+
+			cChat.In("Game Commands:");
+			cChat.In("   /ttt [0-8]: mark space on TicTacToe board");
+			
 		}
 
-		// ----------- Ready ------------
-		else if (strcmp(command, "ready") == 0)
+		
+		// Tic Tac Toe 
+		else if (strcmp(command, "ttt") == 0)
 		{
-			// check if a game instance is running
-			if (gameInstance.IsPlayer(rakClient.thisUser.userName))
+			// online
+			if (!gameInstance.isLocal)
 			{
-				gameInstance.PlayerReady(rakClient.thisUser.userName, true);
-				cChat.In("You are now ready!");
-				gameInstance.inProgress = true;
+				if (strcmp(rakClient.thisUser.userName, gameInstance.players[gameInstance.ticTacToe.turnIndex]) == 0)
+				{
+					char finalNum[512];
 
-				if (gameInstance.type == GameType::TICTACTOE)
-					launchTicTacToe();
+					char* temp;
 
-				else if (gameInstance.type == GameType::CHECKERS)
-					launchCheckers();
+					// get number to enter into the board state
+					temp = strtok(messageTmp, commandDelimiters);
+					strncpy(finalNum, temp, 512);
 
+					// set the space based on inputted number
+					gameInstance.ticTacToe.SetSpace(atoi(finalNum), gameInstance.ticTacToe.GetPlayerSpaceType());
+					// swap turn
+					gameInstance.ticTacToe.NextTurn();
+
+					char recieverSystemAddress[512];
+					// read through user database
+					for (int i = 0; i < rakClient.currentUsers; i++)
+					{
+						if (strcmp(rakClient.users[i].userName, gameInstance.players[gameInstance.ticTacToe.turnIndex]) == 0)
+							strcpy(recieverSystemAddress, rakClient.users[i].systemAddress);
+					}
+
+					// Send the ENTIRE game 
+					GameDelivery gameDelivery(ID_GAME_DELIVERY, rakClient.thisUser.userName, "TicTacToe: Its your turn", atoi(finalNum), gameInstance.ticTacToe.turnIndex, gameInstance.players[0], gameInstance.players[1]);
+					rakClient.peer->Send((const char*)&gameDelivery, sizeof(gameDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)recieverSystemAddress, false);
+
+				}
+				else
+				{
+					cChat.In("It is not your turn. Please wait!");
+				}
 			}
+			// Local game
 			else
 			{
-				cChat.In("You are not a player in an active game session!");
+				char finalNum[512];
+
+				char* temp;
+
+				// get number to enter into the board state
+				temp = strtok(messageTmp, commandDelimiters);
+				strncpy(finalNum, temp, 512);
+
+				// set the space based on inputted number
+				gameInstance.ticTacToe.SetSpace(atoi(finalNum), gameInstance.ticTacToe.GetPlayerSpaceType());
+				// swap turn
+				gameInstance.ticTacToe.NextTurn();
+
+				char msgFormat[512];
+
+				// Display next player
+				sprintf(msgFormat, "%s, its your turn!", gameInstance.players[gameInstance.ticTacToe.turnIndex]);
+				cChat.In(msgFormat);
 			}
+			
 		}
 
 		// -------- Disconnect ---------
@@ -619,6 +729,36 @@ void a3DemoNetworking_send(char message [512])
 				cChat.In(msgFormat);
 			}
 		}
+		// ------- Kick --------
+		else if (rakClient.thisUser.type == UserType::SERVER && strcmp(command, "kick") == 0)
+		{
+			// name of player to kick
+			char finalUser[512];
+
+			char* temp;
+
+			// get final challenger name to enter
+			temp = strtok(messageTmp, commandDelimiters);
+			strncpy(finalUser, temp, 512);
+
+			char userAddress[512];
+
+			// read through user database
+			for (int i = 0; i < rakClient.currentUsers; i++)
+			{
+				// check for user 1
+				if (strcmp(rakClient.users[i].userName, finalUser) == 0)
+					strcpy(userAddress, rakClient.users[i].systemAddress);
+			}
+
+			
+			
+			// Send to all users
+			messagePack msgKick(ID_KICK, "kick");
+			rakClient.peer->Send((const char*)&msgKick, sizeof(msgKick), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID) userAddress, false);
+
+		}
+
 		// Challenge players to online games
 		else if (rakClient.thisUser.type == UserType::SERVER && strcmp(command, "challenge") == 0)
 		{
@@ -658,21 +798,27 @@ void a3DemoNetworking_send(char message [512])
 					strcpy(challenger2Address, rakClient.users[i].systemAddress);
 			}
 
-			char msgFormat[512];
-			sprintf(msgFormat, "%s and %s will play %s! Enter /ready to start!", finalChallenger1, finalChallenger2, finalGame);
-			cChat.In(msgFormat);
-			 
-			// Create our message delivery for the challenge
-			ChatMessageDelivery msgDelivery(ID_GAME_CHALLENGE, rakClient.thisUser.userName, false, msgFormat);
-			rakClient.peer->Send((const char*)&msgDelivery, sizeof(msgDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.thisUser.systemAddress, true);
-			
+		
 			// start a game of TicTacToe
 			if (strcmp(finalGame, "TicTacToe") == 0)
 			{
 				// Init the game with our challenger names
 				gameInstance = Game(finalChallenger1, finalChallenger2, false, GameType::TICTACTOE);
 
-				
+				// check if a game instance is running
+				if (gameInstance.IsPlayer(rakClient.thisUser.userName))
+				{
+					gameInstance.PlayerReady(rakClient.thisUser.userName, true);
+					cChat.In("Game started");
+					gameInstance.inProgress = true;
+					// randomize 
+					gameInstance.ticTacToe.turnIndex = a3randomMaxInt(1);
+
+				}
+				else
+				{
+					cChat.In("You are not a player in an active game session!");
+				}
 			}
 			// start a game of Checkers
 			else if (strcmp(finalGame, "Checkers") == 0)
@@ -680,8 +826,16 @@ void a3DemoNetworking_send(char message [512])
 				// Init the game with our challenger names
 				gameInstance = Game(finalChallenger1, finalChallenger2, false, GameType::CHECKERS);
 			}
-		
 
+			char msgFormat[512];
+			sprintf(msgFormat, "%s and %s will play %s! %s goes first!", finalChallenger1, finalChallenger2, finalGame, gameInstance.players[gameInstance.ticTacToe.turnIndex]);
+			cChat.In(msgFormat);
+
+
+			// Create our message delivery for the challenge
+			GameDelivery msgDelivery(ID_GAME_CHALLENGE, rakClient.thisUser.userName, msgFormat, -1, gameInstance.ticTacToe.turnIndex, finalChallenger1, finalChallenger2);
+			rakClient.peer->Send((const char*)&msgDelivery, sizeof(msgDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)challenger2Address, false);
+		
 
 			// challenge -> playerName -> game
 		}
@@ -732,9 +886,14 @@ void a3DemoNetworking_send(char message [512])
 			}
 			
 		}
+
+		
+
 		// Play the game locally
 		else if (rakClient.thisUser.type == UserType::SERVER && strcmp(command, "play") == 0)
 		{
+		char msgFormat[512];
+
 		// selects the game to be played 
 		char finalGame[512];
 		
@@ -749,12 +908,17 @@ void a3DemoNetworking_send(char message [512])
 		{
 			cChat.In("TicTacToe by yourself!");
 			gameInstance = Game("Player 1", "Player 2", true, GameType::TICTACTOE);
+			gameInstance.inProgress = true;
+			// set random start
+			gameInstance.ticTacToe.turnIndex = a3randomMaxInt(1);
+			sprintf(msgFormat, "%s goes first!", gameInstance.players[gameInstance.ticTacToe.turnIndex]);
+			cChat.In(msgFormat);
 		}
 		else if (strcmp(finalGame, "Checkers") == 0)
 		{
 			cChat.In("Checkers by yourself!");
 			gameInstance = Game("Player 1", "Player 2", true, GameType::CHECKERS);
-
+			gameInstance.inProgress = true;
 		}
 
 		}
@@ -819,8 +983,22 @@ void a3DemoRenderBoard(a3_DemoState const* demoState)
 	{
 		for (j = 0; j < 3; j++)
 		{
-			
-			a3textDraw(demoState->text, textAlign + (j * textOffsetDelta), textOffset - (i * textOffsetDelta), textDepth, 1, 1, 1, 1, "%i", iterator);
+			if (gameInstance.ticTacToe.GetSpaceState(i, j) != TicTacToeSpace::EMPTY)
+			{
+				if (gameInstance.ticTacToe.GetSpaceState(i, j) == TicTacToeSpace::TICTACTOE_X)
+				{
+					a3textDraw(demoState->text, textAlign + (j * textOffsetDelta), textOffset - (i * textOffsetDelta), textDepth, 1, 0, 0, 1, "X");
+				}
+				else if (gameInstance.ticTacToe.GetSpaceState(i, j) == TicTacToeSpace::TICTACTOE_O)
+				{
+					a3textDraw(demoState->text, textAlign + (j * textOffsetDelta), textOffset - (i * textOffsetDelta), textDepth, 0, 1, 0, 1, "O");
+				}
+			}
+			else
+			{
+				a3textDraw(demoState->text, textAlign + (j * textOffsetDelta), textOffset - (i * textOffsetDelta), textDepth, 1, 1, 1, 1, "%i", iterator);
+			}
+
 			iterator++;
 		}
 	}

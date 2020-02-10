@@ -49,6 +49,49 @@ void Game::PlayerReady(char player[512], bool isReady)
 	}
 }
 
+void TicTacToeBoard::SetSpace(int num, TicTacToeSpace spaceState)
+{
+	int x = (int)(num / 3);
+	int y = num % 3;
 
+	SetSpace(x, y, spaceState);
 
+}
 
+TicTacToeSpace TicTacToeBoard::GetPlayerSpaceType()
+{
+	if (turnIndex == 0)
+	{
+		return TicTacToeSpace::TICTACTOE_X;
+	}
+	else if (turnIndex == 1)
+	{
+		return TicTacToeSpace::TICTACTOE_O;
+	}
+	return TicTacToeSpace::EMPTY;
+}
+
+TicTacToeSpace TicTacToeBoard::GetPlayerOtherSpaceType()
+{
+	if (turnIndex == 0)
+	{
+		return TicTacToeSpace::TICTACTOE_O;
+	}
+	else if (turnIndex == 1)
+	{
+		return TicTacToeSpace::TICTACTOE_X;
+	}
+	return TicTacToeSpace::EMPTY;
+}
+
+void TicTacToeBoard::NextTurn()
+{
+	if (turnIndex == 0)
+	{
+		turnIndex = 1;
+	}
+	else if (turnIndex == 1)
+	{
+		turnIndex = 0;
+	}
+}
