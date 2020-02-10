@@ -35,6 +35,9 @@ public:
 	// checks ready ups from both players
 	bool ready[2];
 
+	// Game of tictactoe
+	//gs_tictactoe* ticTacToeGame;
+
 	// -------------------FUNCTIONS----------------//
 	
 	// default ctor
@@ -51,6 +54,7 @@ public:
 
 	// Sets the ready up states for the players
 	void PlayerReady(char player[512], bool isReady);
+
 	
 };
 

@@ -50,6 +50,8 @@
 
 // Game Includes
 #include "A3_DEMO/a3_Networking/a3_NetApp/a3_NetApp_Game.h"
+#include "..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_Networking_gs_tictactoe.c"
+#include "..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_Networking_gs_checkers.c"
 
 
 struct a3_DemoState
@@ -97,6 +99,7 @@ struct a3_DemoState
 // ------------------GAME----------------------//
 Game gameInstance;
 
+gs_tictactoe ticTacGame;
 
 // Multi-Instance Notes
 // main_win.c
@@ -113,6 +116,7 @@ RakClient rakClient;
 char userNamePrompt[512];
 char userTypePrompt[512];
 char ipConnectPrompt[512];
+
 
 void a3DemoNetworking_lobby_init()
 {
@@ -577,6 +581,14 @@ void a3DemoNetworking_send(char message [512])
 			{
 				gameInstance.PlayerReady(rakClient.thisUser.userName, true);
 				cChat.In("You are now ready!");
+				gameInstance.inProgress = true;
+
+				if (gameInstance.type == GameType::TICTACTOE)
+					launchTicTacToe();
+
+				else if (gameInstance.type == GameType::CHECKERS)
+					launchCheckers();
+
 			}
 			else
 			{
@@ -655,13 +667,15 @@ void a3DemoNetworking_send(char message [512])
 			rakClient.peer->Send((const char*)&msgDelivery, sizeof(msgDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.thisUser.systemAddress, true);
 			
 			// start a game of TicTacToe
-			if (strcmp(finalGame, "TicTacToe"))
+			if (strcmp(finalGame, "TicTacToe") == 0)
 			{
 				// Init the game with our challenger names
 				gameInstance = Game(finalChallenger1, finalChallenger2, false, GameType::TICTACTOE);
+
+				
 			}
 			// start a game of Checkers
-			else if (strcmp(finalGame, "Checkers"))
+			else if (strcmp(finalGame, "Checkers") == 0)
 			{
 				// Init the game with our challenger names
 				gameInstance = Game(finalChallenger1, finalChallenger2, false, GameType::CHECKERS);
@@ -783,7 +797,50 @@ void a3DemoRenderClient(a3_DemoState const* demoState)
 	glClear(GL_COLOR_BUFFER_BIT);
 	// render chat
 	a3DemoRenderTextChat(demoState);
+
+
 }
+
+void a3DemoRenderBoard(a3_DemoState const* demoState)
+{
+	// amount to offset text as each line is rendered
+	a3f32 textAlign = 0.7f;
+	a3f32 textOffset = 0.8f;
+	a3f32 textDepth = -1.00f;
+	const a3f32 textOffsetDelta = 0.08f;
+
+	// Renders game board
+	int i;
+	int j;
+
+	int iterator = 0;
+
+	for (i = 0; i < 3; i++)
+	{
+		for (j = 0; j < 3; j++)
+		{
+			
+			a3textDraw(demoState->text, textAlign + (j * textOffsetDelta), textOffset - (i * textOffsetDelta), textDepth, 1, 1, 1, 1, "%i", iterator);
+			iterator++;
+		}
+	}
+}
+
+void a3DemoRenderGame(a3_DemoState const* demoState)
+{
+	if (gameInstance.type == GameType::TICTACTOE)
+	{
+		// Renders users typebox
+		a3DemoRenderBoard(demoState);
+	}
+	else if (gameInstance.type == GameType::CHECKERS)
+	{
+		// Renders users typebox
+		a3textDraw(demoState->text, 0.8f, 0.8f, 1.0f, 1, 1, 1, 1, ":D");
+	}
+}
+
+
 
 void a3DemoUpdate(a3_DemoState const* demoState) 
 {
@@ -817,9 +874,17 @@ void a3DemoUpdate(a3_DemoState const* demoState)
 
 	// Render all text for screen
 	a3DemoRenderClient(demoState);
+
+	// Render the game!!!!
+	if (gameInstance.inProgress)
+	{
+		a3DemoRenderGame(demoState);
+	}
+
 	// Clear last buffer input (the input that was entered this frame)
 	cInput.ClearLastBuffer();
 }
+
 
 //-----------------------------------------------------------------------------
 // miscellaneous functions

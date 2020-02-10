@@ -89,6 +89,8 @@ int launchTicTacToe()
 {
 	gs_tictactoe game = { 0 };
 
+	
+
 	gs_tictactoe_reset(game);
 
 
