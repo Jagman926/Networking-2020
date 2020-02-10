@@ -49,6 +49,7 @@
 #include "A3_DEMO/_utilities/a3_NetApp/a3_RakNet_Core.h"
 
 // Game Includes
+#include "A3_DEMO/a3_Networking/a3_NetApp/a3_NetApp_Game.h"
 
 
 struct a3_DemoState
@@ -89,7 +90,13 @@ struct a3_DemoState
 	a3f32 trigTable[4096 * 4];
 
 	a3_Timer renderTimer[1];
+
 };
+
+
+// ------------------GAME----------------------//
+Game gameInstance;
+
 
 // Multi-Instance Notes
 // main_win.c
@@ -101,7 +108,6 @@ struct a3_DemoState
 ClientChat cChat;
 ClientInput cInput;
 RakClient rakClient;
-
 // Lobby Prompts ---------------------------------------------------------
 
 char userNamePrompt[512];
@@ -562,6 +568,22 @@ void a3DemoNetworking_send(char message [512])
 			cChat.In("   /clear: clear chat history");
 			cChat.In("   /exit: disconnect from server");
 		}
+
+		// ----------- Ready ------------
+		else if (strcmp(command, "ready") == 0)
+		{
+			// check if a game instance is running
+			if (gameInstance.IsPlayer(rakClient.thisUser.userName))
+			{
+				gameInstance.PlayerReady(rakClient.thisUser.userName, true);
+				cChat.In("You are now ready!");
+			}
+			else
+			{
+				cChat.In("You are not a player in an active game session!");
+			}
+		}
+
 		// -------- Disconnect ---------
 		else if (strcmp(command, "exit") == 0)
 		{
@@ -628,13 +650,75 @@ void a3DemoNetworking_send(char message [512])
 			sprintf(msgFormat, "%s and %s will play %s! Enter /ready to start!", finalChallenger1, finalChallenger2, finalGame);
 			cChat.In(msgFormat);
 			 
-			// Create our message delivery
+			// Create our message delivery for the challenge
 			ChatMessageDelivery msgDelivery(ID_GAME_CHALLENGE, rakClient.thisUser.userName, false, msgFormat);
 			rakClient.peer->Send((const char*)&msgDelivery, sizeof(msgDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.thisUser.systemAddress, true);
 			
+			// start a game of TicTacToe
+			if (strcmp(finalGame, "TicTacToe"))
+			{
+				// Init the game with our challenger names
+				gameInstance = Game(finalChallenger1, finalChallenger2, false, GameType::TICTACTOE);
+			}
+			// start a game of Checkers
+			else if (strcmp(finalGame, "Checkers"))
+			{
+				// Init the game with our challenger names
+				gameInstance = Game(finalChallenger1, finalChallenger2, false, GameType::CHECKERS);
+			}
+		
+
+
 			// challenge -> playerName -> game
 		}
 
+		//----------------GAME STATUS----------------//
+		else if (rakClient.thisUser.type == UserType::SERVER && strcmp(command, "gameStatus") == 0)
+		{
+			char msgFormat[512];
+			// Local game status
+			if (gameInstance.isLocal)
+			{
+				if (gameInstance.type == GameType::TICTACTOE)
+				{
+					sprintf(msgFormat, "Local TicTacToe");
+					cChat.In(msgFormat);
+				}
+				else if (gameInstance.type == GameType::CHECKERS)
+				{
+					sprintf(msgFormat, "Local Checkers");
+					cChat.In(msgFormat);
+				}
+			}
+			// Online game status
+			else if (gameInstance.isLocal == false)
+			{
+				if (gameInstance.type == GameType::TICTACTOE)
+				{
+					sprintf(msgFormat, "Online TicTacToe");
+					cChat.In(msgFormat);
+					sprintf(msgFormat, "%s | Ready: %i", gameInstance.players[0], gameInstance.ready[0]);
+					cChat.In(msgFormat);
+					sprintf(msgFormat, "%s | Ready: %i", gameInstance.players[1], gameInstance.ready[1]);
+					cChat.In(msgFormat);
+				}
+				else if (gameInstance.type == GameType::CHECKERS)
+				{
+					sprintf(msgFormat, "Online Checkers");
+					cChat.In(msgFormat);
+					sprintf(msgFormat, "%s | Ready: %i", gameInstance.players[0], gameInstance.ready[0]);
+					cChat.In(msgFormat);
+					sprintf(msgFormat, "%s | Ready: %i", gameInstance.players[1], gameInstance.ready[1]);
+					cChat.In(msgFormat);
+				}
+				else
+				{
+					cChat.In("No game has been created");
+				}
+			}
+			
+		}
+		// Play the game locally
 		else if (rakClient.thisUser.type == UserType::SERVER && strcmp(command, "play") == 0)
 		{
 		// selects the game to be played 
@@ -650,12 +734,12 @@ void a3DemoNetworking_send(char message [512])
 		if (strcmp(finalGame, "TicTacToe") == 0)
 		{
 			cChat.In("TicTacToe by yourself!");
-			// TO-DO: start TikTakToe LOCALLY
+			gameInstance = Game("Player 1", "Player 2", true, GameType::TICTACTOE);
 		}
 		else if (strcmp(finalGame, "Checkers") == 0)
 		{
 			cChat.In("Checkers by yourself!");
-			// TO-DO: start Checkers LOCALLY
+			gameInstance = Game("Player 1", "Player 2", true, GameType::CHECKERS);
 
 		}
 
