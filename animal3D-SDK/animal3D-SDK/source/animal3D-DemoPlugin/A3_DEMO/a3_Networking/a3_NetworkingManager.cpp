@@ -29,6 +29,7 @@
 #include "RakNet/MessageIdentifiers.h"
 #include "RakNet/RakNetTypes.h"
 #include "RakNet/BitStream.h"
+#include "RakNet/GetTime.h"
 
 
 //-----------------------------------------------------------------------------
@@ -152,7 +153,13 @@ a3i32 a3netProcessInbound(a3_NetworkingManager* net)
 			case ID_TIMESTAMP:
 				bs_in.Read(msg);
 				// ****TO-DO: handle timestamp
-
+				RakNet::Time sendTime, recievedTime, dt;
+				bs_in.Read(sendTime);
+				recievedTime = peer->GetClockDifferential(packet->systemAddress);
+				dt = recievedTime - sendTime;
+				printf("\n RECIEVED TIME: %u \n", (unsigned int)sendTime);
+				printf("\n CLOCKDIFF: %u \n", (unsigned int)recievedTime);
+				printf("\n LATENCY: %u \n", (unsigned int)dt);
 				// do not break; proceed to default case to process actual message contents
 			default:
 				switch (msg)
@@ -173,12 +180,19 @@ a3i32 a3netProcessInbound(a3_NetworkingManager* net)
 						// Bitstreams are easier to use than sending casted structures, 
 						//	and handle endian swapping automatically
 						RakNet::BitStream bsOut[1];
+						RakNet::Time sendTime;
+						// indicate timestamp
+						bsOut->Write((RakNet::MessageID)ID_TIMESTAMP);
+						// get time
+						sendTime = RakNet::GetTime();
+						bsOut->Write(sendTime);
+						// rest of message
 						bsOut->Write((RakNet::MessageID)ID_GAME_MESSAGE_1);
 						bsOut->Write("Hello world");
 						peer->Send(bsOut, HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, false);
 
 						// ****TO-DO: write timestamped message
-
+						printf("\n SEND TIME: %u \n", (unsigned int)sendTime);
 					}
 					break;
 				case ID_NEW_INCOMING_CONNECTION:
