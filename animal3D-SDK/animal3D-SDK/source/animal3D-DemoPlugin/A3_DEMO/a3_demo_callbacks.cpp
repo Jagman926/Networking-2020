@@ -44,8 +44,12 @@
 
 // Client Includes
 #include "A3_DEMO/a3_Networking/a3_NetApp/a3_NetApp_Client.h"
+
 // Network Includes
 #include "A3_DEMO/_utilities/a3_NetApp/a3_RakNet_Core.h"
+
+// Game Includes
+
 
 struct a3_DemoState
 {
@@ -126,8 +130,7 @@ void a3DemoNetworking_init()
 {
 	if (!rakClient.connected)
 	{
-		// TO-DO: Prompt user for inputting their user name
-		// TO-DO: Ask user if they want to join or host a game room
+		
 		if (rakClient.thisUser.userName[0] == 0)
 		{
 			if (userNamePrompt[0] != 0)
@@ -440,6 +443,16 @@ void a3DemoNetworking_recieve()
 		}
 		break;
 
+		case ID_GAME_CHALLENGE:
+		{
+			// Packet to data struct
+			ChatMessageDelivery* p = (ChatMessageDelivery*)rakClient.packet->data;
+			// Print the message with the message string from the structure
+			cChat.In(p->msgTxt);
+
+			break;
+		}
+
 		default:
 			sprintf(msgFormat, "Message with identifier %i has arrived", rakClient.packet->data[0]);
 			cChat.In(msgFormat);
@@ -461,6 +474,7 @@ void a3DemoNetworking_send(char message [512])
 	char* messageTmp;
 	char finalMessage[512];
 	char finalUser[512];
+	
 
 
 	// If preceeded with '/', then it is a send command
@@ -571,6 +585,82 @@ void a3DemoNetworking_send(char message [512])
 				cChat.In(msgFormat);
 			}
 		}
+		// Challenge players to online games
+		else if (rakClient.thisUser.type == UserType::SERVER && strcmp(command, "challenge") == 0)
+		{
+			// the user name of the first challenger to challenge
+			char finalChallenger1[512];
+			// the user name of the first challenger to challenge
+			char finalChallenger2[512];
+			// selects the game to be played 
+			char finalGame[512];
+			
+
+			char* temp;
+
+			// get final challenger name to enter
+			temp = strtok(messageTmp, commandDelimiters);
+			strncpy(finalChallenger1, temp, 512);
+
+			// get second final challenger name to enter
+			temp = strtok(NULL, commandDelimiters);
+			strncpy(finalChallenger2, temp, 512);
+
+			// get game name to enter
+			temp = strtok(NULL, commandDelimiters);
+			strncpy(finalGame, temp, 512);
+
+			char challenger1Address[512];
+			char challenger2Address[512];
+
+			// read through user database
+			for (int i = 0; i < rakClient.currentUsers; i++)
+			{
+				// check for user 1
+				if (strcmp(rakClient.users[i].userName, finalChallenger1) == 0)
+					strcpy(challenger1Address, rakClient.users[i].systemAddress);
+				// check for user 2
+				if (strcmp(rakClient.users[i].userName, finalChallenger2) == 0)
+					strcpy(challenger2Address, rakClient.users[i].systemAddress);
+			}
+
+			char msgFormat[512];
+			sprintf(msgFormat, "%s and %s will play %s! Enter /ready to start!", finalChallenger1, finalChallenger2, finalGame);
+			cChat.In(msgFormat);
+			 
+			// Create our message delivery
+			ChatMessageDelivery msgDelivery(ID_GAME_CHALLENGE, rakClient.thisUser.userName, false, msgFormat);
+			rakClient.peer->Send((const char*)&msgDelivery, sizeof(msgDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.thisUser.systemAddress, true);
+			
+			// challenge -> playerName -> game
+		}
+
+		else if (rakClient.thisUser.type == UserType::SERVER && strcmp(command, "play") == 0)
+		{
+		// selects the game to be played 
+		char finalGame[512];
+		
+		char* temp;
+
+		// get game name to enter
+		temp = strtok(messageTmp, commandDelimiters);
+		strncpy(finalGame, temp, 512);
+
+		// pass input
+		if (strcmp(finalGame, "TicTacToe") == 0)
+		{
+			cChat.In("TicTacToe by yourself!");
+			// TO-DO: start TikTakToe LOCALLY
+		}
+		else if (strcmp(finalGame, "Checkers") == 0)
+		{
+			cChat.In("Checkers by yourself!");
+			// TO-DO: start Checkers LOCALLY
+
+		}
+
+		}
+
 		// Invalid command
 		else
 		{
