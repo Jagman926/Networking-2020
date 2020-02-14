@@ -23,6 +23,8 @@ typedef struct a3_InputHandler				a3_InputHandler;
 
 //-----------------------------------------------------------------------------
 
+	void InitInput(a3_InputHandler* input);
+
 	// adds an ascii value to the input buffer
 	// Params
 	//	param1 (int): ascii value being put into buffer

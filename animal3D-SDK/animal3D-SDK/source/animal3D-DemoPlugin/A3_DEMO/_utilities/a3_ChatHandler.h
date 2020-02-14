@@ -18,6 +18,8 @@ typedef struct a3_ChatHandler				a3_ChatHandler;
 	{
 		// variables
 		int chatViewMax;
+		int hideChat;
+		int unreadMessages;
 		// Chat container
 		char buffer[512][512];
 		int bufferWriteLoc;
@@ -26,6 +28,7 @@ typedef struct a3_ChatHandler				a3_ChatHandler;
 
 //-----------------------------------------------------------------------------
 
+	void InitChat(a3_ChatHandler* chat);
 
 	// adds buffer to chat buffer at current write location
 	// Params

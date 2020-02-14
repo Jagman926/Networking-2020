@@ -31,10 +31,11 @@
 #include "a3_dylib_config_export.h"
 #include "a3_DemoState.h"
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <GL/glew.h>
 
 
 //-----------------------------------------------------------------------------
@@ -66,6 +67,55 @@ void a3demo_stopNetworking(a3_DemoState* demoState)
 	if (a3netDisconnect(demoState->net) > 0)
 		if (a3netShutdown(demoState->net) > 0)
 			printf("\n SHUT DOWN NETWORKING \n");
+}
+
+//-----------------------------------------------------------------------------
+// input/chat stuff
+
+// 
+void a3demo_RenderChat(a3_DemoState const* demostate)
+{
+	// amount to offset text as each line is rendered
+	a3f32 textAlign = -0.98f;
+	a3f32 textOffset = 1.00f;
+	a3f32 textDepth = -1.00f;
+	const a3f32 textOffsetDelta = -0.08f;
+
+	if (!demostate->chat->hideChat)
+	{
+		// Renders chat log
+		int i;
+		for (i = demostate->chat->bufferViewOffset; i < demostate->chat->bufferViewOffset + demostate->chat->chatViewMax; i++)
+		{
+			if (i >= 0 && i < demostate->chat->bufferWriteLoc)
+			{
+				a3textDraw(demostate->text, textAlign, textOffset += textOffsetDelta, textDepth, 1, 1, 1, 1, "%s", demostate->chat->buffer[i]);
+			}
+		}
+	}
+	else
+	{
+		if(demostate->chat->unreadMessages != 0)
+			a3textDraw(demostate->text, textAlign, textOffset + textOffsetDelta, textDepth, 1, 1, 1, 1, "[*%i]", demostate->chat->unreadMessages);
+	}
+}
+
+//
+void a3demo_RenderInput(a3_DemoState const* demostate)
+{
+	// Renders users typebox
+	a3textDraw(demostate->text, -0.98f, -0.95f, -1.0f, 1, 1, 1, 1, demostate->input->buffer);
+}
+
+//
+void a3demo_RenderClientText(a3_DemoState const* demostate)
+{
+	// clear color
+	glClear(GL_COLOR_BUFFER_BIT);
+	// input render
+	a3demo_RenderInput(demostate);
+	// chat render
+	a3demo_RenderChat(demostate);
 }
 
 //-----------------------------------------------------------------------------
@@ -231,6 +281,10 @@ A3DYLIBSYMBOL a3_DemoState *a3demoCB_load(a3_DemoState *demoState, a3boolean hot
 		demoState->textMode = 1;
 		demoState->textModeCount = 3;	// 0=off, 1=controls, 2=data
 
+		// input and chat
+		InitInput(demoState->input);
+		InitChat(demoState->chat);
+
 		/*
 		// enable asset streaming between loads
 	//	demoState->streaming = 1;
@@ -320,6 +374,7 @@ A3DYLIBSYMBOL a3i32 a3demoCB_idle(a3_DemoState *demoState)
 			//a3demo_update(demoState, demoState->renderTimer->secondsPerTick);
 			//a3demo_render(demoState);
 
+			// networking update
 			a3netProcessInbound(demoState->net);
 			a3netProcessOutbound(demoState->net);
 
@@ -327,6 +382,12 @@ A3DYLIBSYMBOL a3i32 a3demoCB_idle(a3_DemoState *demoState)
 			a3mouseUpdate(demoState->mouse);
 			a3keyboardUpdate(demoState->keyboard);
 			a3XboxControlUpdate(demoState->xcontrol);
+			
+			// render client text
+			a3demo_RenderClientText(demoState);
+
+			// Clear last buffer input (the input that was entered this frame)
+			ClearLastInputBuffer(demoState->input);
 
 			// render occurred this idle: return +1
 			return +1;
@@ -445,7 +506,8 @@ A3DYLIBSYMBOL void a3demoCB_keyCharPress(a3_DemoState *demoState, a3i32 asciiKey
 	// persistent state update
 	a3keyboardSetStateASCII(demoState->keyboard, (a3byte)asciiKey);
 
-	// handle special cases immediately
+	// switch statement for keyboard input
+	// Ascii table for reference: http://www.asciitable.com/
 	switch (asciiKey)
 	{
 
@@ -473,6 +535,13 @@ A3DYLIBSYMBOL void a3demoCB_keyCharPress(a3_DemoState *demoState, a3i32 asciiKey
 		}
 		break;
 
+	// Tab
+	case 9:
+		// toggles chat visability
+		demoState->chat->hideChat = 1 - demoState->chat->hideChat;
+		demoState->chat->unreadMessages = 0;
+		break;
+
 	// Carriage return (Enter)
 	case 13:
 		// Make sure line isn't empty
@@ -486,8 +555,14 @@ A3DYLIBSYMBOL void a3demoCB_keyCharPress(a3_DemoState *demoState, a3i32 asciiKey
 		ClearInputBuffer(demoState->input);
 		break;
 
+	// Escape 
 	case 27: 
 		demoState->exitFlag = 1;
+		break;
+
+	// Tilda (UNREAD MESSAGES TEST)
+	case 96:
+		demoState->chat->unreadMessages++;
 		break;
 
 	// Remaining input
@@ -592,6 +667,8 @@ A3DYLIBSYMBOL void a3demoCB_keyCharHold(a3_DemoState *demoState, a3i32 asciiKey)
 	// persistent state update
 	a3keyboardSetStateASCII(demoState->keyboard, (a3byte)asciiKey);
 
+	// switch statement for keyboard input
+	// Ascii table for reference: http://www.asciitable.com/
 	switch (asciiKey)
 	{
 		// Backspace

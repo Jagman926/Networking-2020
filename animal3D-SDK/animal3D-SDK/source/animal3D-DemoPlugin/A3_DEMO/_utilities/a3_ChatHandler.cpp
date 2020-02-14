@@ -2,6 +2,15 @@
 #include <string>
 #include <algorithm>
 
+void InitChat(a3_ChatHandler* chat)
+{
+	chat->chatViewMax = 22;
+	chat->bufferWriteLoc = 0;
+	chat->bufferViewOffset = 0;
+	chat->hideChat = 0;
+	chat->unreadMessages = 0;
+}
+
 void ChatIn(a3_ChatHandler* chat, char in[512])
 {
 	// add message to chat buffer

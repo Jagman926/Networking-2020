@@ -2,6 +2,12 @@
 #include <string>
 #include <algorithm>
 
+
+void InitInput(a3_InputHandler* input)
+{
+	input->bufferWriteLoc = 0;
+}
+
 void InputIn(a3_InputHandler* input, int asciiIn)
 {
 	// Add ascii valie to buffer write location
