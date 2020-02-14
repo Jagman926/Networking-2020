@@ -45,6 +45,8 @@
 
 #include "a3_NetworkingManager.h"
 
+#include "_utilities/a3_InputHandler.h"
+#include "_utilities/a3_ChatHandler.h"
 
 //-----------------------------------------------------------------------------
 
@@ -157,6 +159,9 @@ extern "C"
 		// networking
 		a3_NetworkingManager net[1];
 
+		// input
+		a3_InputHandler input[1];
+		a3_ChatHandler chat[1];
 
 		//---------------------------------------------------------------------
 		// object arrays: organized as anonymous unions for two reasons: 

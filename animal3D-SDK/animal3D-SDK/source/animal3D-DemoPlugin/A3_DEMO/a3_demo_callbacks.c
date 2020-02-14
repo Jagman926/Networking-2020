@@ -68,7 +68,6 @@ void a3demo_stopNetworking(a3_DemoState* demoState)
 			printf("\n SHUT DOWN NETWORKING \n");
 }
 
-
 //-----------------------------------------------------------------------------
 // miscellaneous functions
 
@@ -99,6 +98,7 @@ inline void a3demoCB_keyCharPress_main(a3_DemoState *demoState, a3i32 asciiKey,
 	const a3ui32 demoSubMode, const a3ui32 demoOutput,
 	const a3ui32 demoSubModeCount, const a3ui32 demoOutputCount)
 {
+	/*
 	switch (asciiKey)
 	{
 		// sub-modes
@@ -130,18 +130,12 @@ inline void a3demoCB_keyCharPress_main(a3_DemoState *demoState, a3i32 asciiKey,
 		demoState->displayPipeline = 1 - demoState->displayPipeline;
 		break;
 	}
+	*/
 }
 
 inline void a3demoCB_keyCharHold_main(a3_DemoState *demoState, a3i32 asciiKey)
 {
-	// handle special cases immediately
-	switch (asciiKey)
-	{
-	case 'l':
-		break;
-	case 'L':
-		break;
-	}
+
 }
 
 
@@ -198,6 +192,7 @@ A3DYLIBSYMBOL a3_DemoState *a3demoCB_load(a3_DemoState *demoState, a3boolean hot
 	// do any re-allocation tasks
 	if (demoState && hotbuild)
 	{
+		/*
 	//	const a3ui32 stateSize = a3demo_getPersistentStateSize();
 	//	a3_DemoState copy = *demoState;
 
@@ -211,6 +206,7 @@ A3DYLIBSYMBOL a3_DemoState *a3demoCB_load(a3_DemoState *demoState, a3boolean hot
 		a3demo_refresh(demoState);
 		a3demo_initSceneRefresh(demoState);
 		a3trigInitSetTables(trigSamplesPerDegree, demoState->trigTable);
+		*/
 	}
 
 	// do any initial allocation tasks
@@ -235,10 +231,9 @@ A3DYLIBSYMBOL a3_DemoState *a3demoCB_load(a3_DemoState *demoState, a3boolean hot
 		demoState->textMode = 1;
 		demoState->textModeCount = 3;	// 0=off, 1=controls, 2=data
 
-
+		/*
 		// enable asset streaming between loads
 	//	demoState->streaming = 1;
-
 
 		// create directory for data
 		a3fileStreamMakeDirectory("./data");
@@ -255,6 +250,7 @@ A3DYLIBSYMBOL a3_DemoState *a3demoCB_load(a3_DemoState *demoState, a3boolean hot
 
 		// scene objects
 		a3demo_initScene(demoState);
+		*/
 	}
 
 	// return persistent state pointer
@@ -278,12 +274,14 @@ A3DYLIBSYMBOL a3_DemoState *a3demoCB_unload(a3_DemoState *demoState, a3boolean h
 		// free fixed objects
 		a3textRelease(demoState->text);
 
+		/*
 		// free graphics objects
 		a3demo_unloadGeometry(demoState);
 		a3demo_unloadShaders(demoState);
 
 		// validate unload
 		a3demo_validateUnload(demoState);
+		*/
 
 		// erase other stuff
 		a3trigFree();
@@ -318,11 +316,12 @@ A3DYLIBSYMBOL a3i32 a3demoCB_idle(a3_DemoState *demoState)
 		if (a3timerUpdate(demoState->renderTimer) > 0)
 		{
 			// render timer ticked, update demo state and draw
-			a3demo_input(demoState, demoState->renderTimer->secondsPerTick);
+			//a3demo_input(demoState, demoState->renderTimer->secondsPerTick);
+			//a3demo_update(demoState, demoState->renderTimer->secondsPerTick);
+			//a3demo_render(demoState);
+
 			a3netProcessInbound(demoState->net);
-			a3demo_update(demoState, demoState->renderTimer->secondsPerTick);
 			a3netProcessOutbound(demoState->net);
-			a3demo_render(demoState);
 
 			// update input
 			a3mouseUpdate(demoState->mouse);
@@ -368,8 +367,10 @@ A3DYLIBSYMBOL void a3demoCB_windowMove(a3_DemoState *demoState, a3i32 newWindowP
 // window resizes
 A3DYLIBSYMBOL void a3demoCB_windowResize(a3_DemoState *demoState, a3i32 newWindowWidth, a3i32 newWindowHeight)
 {
+	/*
 	a3ui32 i;
 	a3_DemoCamera *camera;
+	*/
 
 	// account for borders here
 	const a3i32 frameBorder = 0;
@@ -398,6 +399,7 @@ A3DYLIBSYMBOL void a3demoCB_windowResize(a3_DemoState *demoState, a3i32 newWindo
 	// use framebuffer deactivate utility to set viewport
 	a3framebufferDeactivateSetViewport(a3fbo_depthDisable, -frameBorder, -frameBorder, demoState->frameWidth, demoState->frameHeight);
 
+	/*
 	// viewing info for projection matrix
 	// initialize cameras dependent on viewport
 	for (i = 0, camera = demoState->camera + i; i < demoStateMaxCount_cameraObject; ++i, ++camera)
@@ -405,6 +407,7 @@ A3DYLIBSYMBOL void a3demoCB_windowResize(a3_DemoState *demoState, a3i32 newWindo
 		camera->aspect = frameAspect;
 		a3demo_updateCameraProjection(camera);
 	}
+	*/
 }
 
 // any key is pressed
@@ -432,10 +435,12 @@ A3DYLIBSYMBOL void a3demoCB_keyRelease(a3_DemoState *demoState, a3i32 virtualKey
 // NOTE: there is no release counterpart
 A3DYLIBSYMBOL void a3demoCB_keyCharPress(a3_DemoState *demoState, a3i32 asciiKey)
 {
+	/*
 	a3ui32 demoSubMode = demoState->demoSubMode[demoState->demoMode];
 	const a3ui32 demoSubModeCount = demoState->demoSubModeCount[demoState->demoMode];
 	const a3ui32 demoOutput = demoState->demoOutputMode[demoState->demoMode][demoSubMode];
 	const a3ui32 demoOutputCount = demoState->demoOutputCount[demoState->demoMode][demoSubMode];
+	*/
 
 	// persistent state update
 	a3keyboardSetStateASCII(demoState->keyboard, (a3byte)asciiKey);
@@ -443,29 +448,56 @@ A3DYLIBSYMBOL void a3demoCB_keyCharPress(a3_DemoState *demoState, a3i32 asciiKey
 	// handle special cases immediately
 	switch (asciiKey)
 	{
-		// uncomment to make escape key kill the current demo
-		// if disabled, use 'exit demo' menu option
-//	case 27: 
-//		demoState->exitFlag = 1;
-//		break;
 
-
-		// stop networking
+	// stop networking
 	case '0':
 		a3demo_stopNetworking(demoState);
 		break;
 
-		// start networking as server
+	// start networking as server
 	case '1':
 		a3demo_startNetworking(demoState, 1);
 		break;
 
-		// start networking as client
+	// start networking as client
 	case '2':
 		a3demo_startNetworking(demoState, 0);
 		break;
+	
+	// Backspace
+	case 8:
+		if (demoState->input->bufferWriteLoc != 0)
+		{
+			// Remove previous input value
+			ClearLastInputValue(demoState->input);
+		}
+		break;
 
+	// Carriage return (Enter)
+	case 13:
+		// Make sure line isn't empty
+		if (demoState->input->buffer[0] != 0)
+		{
+			// Add input buffer to chat buffer
+			ChatIn(demoState->chat, demoState->input->buffer);
+		}
 
+		// empty input buffer
+		ClearInputBuffer(demoState->input);
+		break;
+
+	case 27: 
+		demoState->exitFlag = 1;
+		break;
+
+	// Remaining input
+	default:
+		// If there is input, add it to input buffer
+		InputIn(demoState->input, asciiKey);
+		break;
+	}
+
+		/*
 		// reload (T) or toggle (t) text
 	case 'T':
 		if (!a3textIsInitialized(demoState->text))
@@ -551,7 +583,7 @@ A3DYLIBSYMBOL void a3demoCB_keyCharPress(a3_DemoState *demoState, a3i32 asciiKey
 		a3demoCB_keyCharPress_main(demoState, asciiKey,
 			demoSubMode, demoOutput, demoSubModeCount, demoOutputCount);
 		break;
-	}
+		*/
 }
 
 // ASCII key is held
@@ -560,7 +592,25 @@ A3DYLIBSYMBOL void a3demoCB_keyCharHold(a3_DemoState *demoState, a3i32 asciiKey)
 	// persistent state update
 	a3keyboardSetStateASCII(demoState->keyboard, (a3byte)asciiKey);
 
+	switch (asciiKey)
+	{
+		// Backspace
+	case 8:
+		if (demoState->input->bufferWriteLoc != 0)
+		{
+			// Remove previous input value
+			ClearLastInputValue(demoState->input);
+		}
+		break;
 
+		// Remaining input
+	default:
+		// If there is input, add it to input buffer
+		InputIn(demoState->input, asciiKey);
+		break;
+	}
+
+	/*
 	// callback for current mode
 	switch (demoState->demoMode)
 	{
@@ -569,6 +619,7 @@ A3DYLIBSYMBOL void a3demoCB_keyCharHold(a3_DemoState *demoState, a3i32 asciiKey)
 		a3demoCB_keyCharHold_main(demoState, asciiKey);
 		break;
 	}
+	*/
 }
 
 // mouse button is clicked
@@ -599,12 +650,15 @@ A3DYLIBSYMBOL void a3demoCB_mouseRelease(a3_DemoState *demoState, a3i32 button, 
 A3DYLIBSYMBOL void a3demoCB_mouseWheel(a3_DemoState *demoState, a3i32 delta, a3i32 cursorX, a3i32 cursorY)
 {
 	// controlled camera when zooming
-	a3_DemoCamera *camera;
+	// a3_DemoCamera *camera;
 
 	// persistent state update
 	a3mouseSetStateWheel(demoState->mouse, (a3_MouseWheelState)delta);
 	a3mouseSetPosition(demoState->mouse, cursorX, cursorY);
 
+	demoState->chat->bufferViewOffset = max(0, min(demoState->chat->bufferWriteLoc - demoState->chat->chatViewMax, demoState->chat->bufferViewOffset + (-1 * delta)));
+
+	/*
 	switch (demoState->demoMode)
 	{
 		// main render pipeline
@@ -617,6 +671,7 @@ A3DYLIBSYMBOL void a3demoCB_mouseWheel(a3_DemoState *demoState, a3i32 delta, a3i
 		a3demo_updateCameraProjection(camera);
 		break;
 	}
+	*/
 }
 
 // mouse moves

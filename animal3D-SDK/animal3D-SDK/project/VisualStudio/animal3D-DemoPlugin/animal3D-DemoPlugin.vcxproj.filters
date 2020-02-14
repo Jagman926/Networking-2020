@@ -111,6 +111,12 @@
     <ClCompile Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_demo_callbacks.c">
       <Filter>Source Files\common\A3_DEMO</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\_utilities\a3_InputHandler.cpp">
+      <Filter>Source Files\common\A3_DEMO\_utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\_utilities\a3_ChatHandler.cpp">
+      <Filter>Source Files\common\A3_DEMO\_utilities</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\source\animal3D-DemoPlugin\a3_dylib_config_export.h">
@@ -130,6 +136,12 @@
     </ClInclude>
     <ClInclude Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_NetworkingManager.h">
       <Filter>Header Files\A3_DEMO\a3_Networking</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\_utilities\a3_InputHandler.h">
+      <Filter>Header Files\A3_DEMO\_utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\_utilities\a3_ChatHandler.h">
+      <Filter>Header Files\A3_DEMO\_utilities</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
