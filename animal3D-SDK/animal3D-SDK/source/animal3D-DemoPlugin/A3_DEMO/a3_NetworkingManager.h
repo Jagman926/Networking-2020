@@ -30,7 +30,38 @@
 // animal3D framework includes
 
 #include "animal3D/animal3D.h"
+#include "_utilities/a3_ChatHandler.h"
 
+//-----------------------------------------------------------------------------
+
+enum UserType
+{
+	NONE = 0,
+	SERVER,
+	PLAYER,
+	SPECTATOR,
+};
+
+struct User
+{
+	/* ---------- Variables ------------ */
+
+	// Name of user
+	char userName[512];
+	// User's System Address
+	char systemAddress[512];
+	// Type of user
+	UserType type;
+	// Connected to server
+	bool isConnected;
+
+	/* --------------------------------- */
+
+	// Default ctor
+	User() {};
+	// Used for creating new users
+	User(char name[], const char* sysAddress, UserType userType);
+};
 
 //-----------------------------------------------------------------------------
 
@@ -40,7 +71,6 @@ extern "C"
 #else	// !__cplusplus
 	typedef struct a3_NetworkingManager				a3_NetworkingManager;
 #endif	// __cplusplus
-
 
 //-----------------------------------------------------------------------------
 
@@ -52,6 +82,16 @@ extern "C"
 		a3ui16 port_inbound, port_outbound;
 		a3ui16 maxConnect_inbound, maxConnect_outbound;
 		void* peer;
+		a3boolean isServer;
+
+		// List containing all users 
+		User users[16]; // from callbacks maxConnections_server
+		// the user to be used by this RakClient
+		User thisUser;
+		// number of current users, including host
+		int currentUsers = 0;
+		// string for host system address
+		char hostSystemAddress[512];
 	};
 
 
@@ -62,7 +102,6 @@ extern "C"
 
 	// shutdown networking
 	a3i32 a3netShutdown(a3_NetworkingManager* net);
-
 
 	// connect
 	a3i32 a3netConnect(a3_NetworkingManager* net, a3netAddressStr const ip);
@@ -75,7 +114,7 @@ extern "C"
 	a3i32 a3netProcessInbound(a3_NetworkingManager* net);
 
 	// process outbound packets
-	a3i32 a3netProcessOutbound(a3_NetworkingManager* net);
+	a3i32 a3netProcessOutbound(a3_NetworkingManager* net, a3_ChatHandler* chat, char inputMessage [512]);
 
 
 //-----------------------------------------------------------------------------

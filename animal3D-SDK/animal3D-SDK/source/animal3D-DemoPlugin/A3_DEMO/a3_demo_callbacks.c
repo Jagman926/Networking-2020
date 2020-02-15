@@ -100,6 +100,12 @@ void a3demo_RenderChat(a3_DemoState const* demostate)
 	}
 }
 
+//-----------------------------------------------------------------------------
+// lobby state
+
+
+//-----------------------------------------------------------------------------
+
 //
 void a3demo_RenderInput(a3_DemoState const* demostate)
 {
@@ -376,7 +382,7 @@ A3DYLIBSYMBOL a3i32 a3demoCB_idle(a3_DemoState *demoState)
 
 			// networking update
 			a3netProcessInbound(demoState->net);
-			a3netProcessOutbound(demoState->net);
+			a3netProcessOutbound(demoState->net, demoState->chat, demoState->input->lastInputBuffer);
 
 			// update input
 			a3mouseUpdate(demoState->mouse);
