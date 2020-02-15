@@ -48,11 +48,6 @@
 // Network Includes
 #include "A3_DEMO/_utilities/a3_NetApp/a3_RakNet_Core.h"
 
-// Game Includes
-#include "A3_DEMO/a3_Networking/a3_NetApp/a3_NetApp_Game.h"
-#include "..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_Networking_gs_tictactoe.c"
-#include "..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_Networking_gs_checkers.c"
-
 
 struct a3_DemoState
 {
@@ -94,12 +89,6 @@ struct a3_DemoState
 	a3_Timer renderTimer[1];
 
 };
-
-
-// ------------------GAME----------------------//
-Game gameInstance;
-
-gs_tictactoe ticTacGame;
 
 // Multi-Instance Notes
 // main_win.c
@@ -469,59 +458,6 @@ void a3DemoNetworking_recieve()
 		}
 		break;
 
-		case ID_GAME_CHALLENGE:
-		{
-			// Packet to data struct
-			GameDelivery* p = (GameDelivery*)rakClient.packet->data;
-			// Print the message with the message string from the structure
-			cChat.In(p->msgTxt);
-			
-			// init the local instance of the game for the client
-			gameInstance = Game(p->challenger1, p->challenger2, false, GameType::TICTACTOE);
-			// set game as in progress
-			gameInstance.inProgress = true;
-			// init a board of tic tac toe
-			gameInstance.ticTacToe.ResetBoard();
-			// set turn index of player
-			gameInstance.ticTacToe.turnIndex = p->playerTurnIndex;
-
-			break;
-		}
-		case ID_GAME_DELIVERY:
-		{
-			GameDelivery* p = (GameDelivery*)rakClient.packet->data;
-			// print the text in the message
-			cChat.In(p->msgTxt);
-			// set the space based on inputted number
-			gameInstance.ticTacToe.SetSpace(p->boardIndex, gameInstance.ticTacToe.GetPlayerSpaceType());
-			// go to next turn
-			gameInstance.ticTacToe.NextTurn();
-
-			char recieverSystemAddress[512];
-			// read through user database
-			for (int i = 0; i < rakClient.currentUsers; i++)
-			{
-				if (strcmp(rakClient.users[i].userName, gameInstance.players[gameInstance.ticTacToe.turnIndex]) == 0)
-					strcpy(recieverSystemAddress, rakClient.users[i].systemAddress);
-			}
-
-			if (strcmp(recieverSystemAddress, rakClient.users[0].systemAddress) == 0)
-			{
-				// Send the ENTIRE game back to server
-				GameDelivery gameDelivery(ID_GAME_DELIVERY, rakClient.thisUser.userName, "TicTacToe: Its your turn", p->boardIndex, gameInstance.ticTacToe.turnIndex, p->challenger1, p->challenger2);
-				rakClient.peer->Send((const char*)&gameDelivery, sizeof(gameDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.hostSystemAddress, false);
-			}
-			else
-			{
-				// Send the ENTIRE game back to server
-				GameDelivery gameDelivery(ID_GAME_DELIVERY, rakClient.thisUser.userName, "TicTacToe: Its your turn", p->boardIndex, gameInstance.ticTacToe.turnIndex, p->challenger1, p->challenger2);
-				rakClient.peer->Send((const char*)&gameDelivery, sizeof(gameDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)recieverSystemAddress, false);
-			}
-			
-
-			break;
-		}
-
 		default:
 			sprintf(msgFormat, "Message with identifier %i has arrived", rakClient.packet->data[0]);
 			cChat.In(msgFormat);
@@ -530,6 +466,8 @@ void a3DemoNetworking_recieve()
 
 		// Erase information of msgFormat
 		memset(msgFormat, 0, sizeof msgFormat);
+		// Increment unread message count
+		cChat.unreadMessages++;
 	}
 }
 
@@ -553,7 +491,7 @@ void a3DemoNetworking_send(char message [512])
 		command = strtok(message, commandDelimiters);
 		// Save message text
 		messageTmp = strtok(NULL, messageDelimiters);
-		
+
 		// ------------------------------- Client Commands ------------------------------------
 
 		// -------- All Message ---------
@@ -625,85 +563,12 @@ void a3DemoNetworking_send(char message [512])
 				cChat.In("Admin Commands:");
 				cChat.In("   /users: output all usernames and corresponding system address");
 				cChat.In("   /kick [username]: kicks specified user from lobby");
-
-				cChat.In("Game Commands:");
-				cChat.In("   /challenge [user1] [user2] [TicTacToe/Checkers]: start an online game");
-				cChat.In("   /play [TicTacToe/Checkers]: starts a local game");
 			}
 			cChat.In("Client Commands:");
 			cChat.In("   /all: send message to all members of chat");
 			cChat.In("   /msg [username]: send private message to user");
 			cChat.In("   /clear: clear chat history");
 			cChat.In("   /exit: disconnect from server");
-
-			cChat.In("Game Commands:");
-			cChat.In("   /ttt [0-8]: mark space on TicTacToe board");
-			
-		}
-
-		
-		// Tic Tac Toe 
-		else if (strcmp(command, "ttt") == 0)
-		{
-			// online
-			if (!gameInstance.isLocal)
-			{
-				if (strcmp(rakClient.thisUser.userName, gameInstance.players[gameInstance.ticTacToe.turnIndex]) == 0)
-				{
-					char finalNum[512];
-
-					char* temp;
-
-					// get number to enter into the board state
-					temp = strtok(messageTmp, commandDelimiters);
-					strncpy(finalNum, temp, 512);
-
-					// set the space based on inputted number
-					gameInstance.ticTacToe.SetSpace(atoi(finalNum), gameInstance.ticTacToe.GetPlayerSpaceType());
-					// swap turn
-					gameInstance.ticTacToe.NextTurn();
-
-					char recieverSystemAddress[512];
-					// read through user database
-					for (int i = 0; i < rakClient.currentUsers; i++)
-					{
-						if (strcmp(rakClient.users[i].userName, gameInstance.players[gameInstance.ticTacToe.turnIndex]) == 0)
-							strcpy(recieverSystemAddress, rakClient.users[i].systemAddress);
-					}
-
-					// Send the ENTIRE game 
-					GameDelivery gameDelivery(ID_GAME_DELIVERY, rakClient.thisUser.userName, "TicTacToe: Its your turn", atoi(finalNum), gameInstance.ticTacToe.turnIndex, gameInstance.players[0], gameInstance.players[1]);
-					rakClient.peer->Send((const char*)&gameDelivery, sizeof(gameDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)recieverSystemAddress, false);
-
-				}
-				else
-				{
-					cChat.In("It is not your turn. Please wait!");
-				}
-			}
-			// Local game
-			else
-			{
-				char finalNum[512];
-
-				char* temp;
-
-				// get number to enter into the board state
-				temp = strtok(messageTmp, commandDelimiters);
-				strncpy(finalNum, temp, 512);
-
-				// set the space based on inputted number
-				gameInstance.ticTacToe.SetSpace(atoi(finalNum), gameInstance.ticTacToe.GetPlayerSpaceType());
-				// swap turn
-				gameInstance.ticTacToe.NextTurn();
-
-				char msgFormat[512];
-
-				// Display next player
-				sprintf(msgFormat, "%s, its your turn!", gameInstance.players[gameInstance.ticTacToe.turnIndex]);
-				cChat.In(msgFormat);
-			}
-			
 		}
 
 		// -------- Disconnect ---------
@@ -751,11 +616,11 @@ void a3DemoNetworking_send(char message [512])
 					strcpy(userAddress, rakClient.users[i].systemAddress);
 			}
 
-			
-			
+
+
 			// Send to all users
 			messagePack msgKick(ID_KICK, "kick");
-			rakClient.peer->Send((const char*)&msgKick, sizeof(msgKick), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID) userAddress, false);
+			rakClient.peer->Send((const char*)& msgKick, sizeof(msgKick), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID) userAddress, false);
 
 		}
 
@@ -768,7 +633,7 @@ void a3DemoNetworking_send(char message [512])
 			char finalChallenger2[512];
 			// selects the game to be played 
 			char finalGame[512];
-			
+
 
 			char* temp;
 
@@ -797,138 +662,6 @@ void a3DemoNetworking_send(char message [512])
 				if (strcmp(rakClient.users[i].userName, finalChallenger2) == 0)
 					strcpy(challenger2Address, rakClient.users[i].systemAddress);
 			}
-
-		
-			// start a game of TicTacToe
-			if (strcmp(finalGame, "TicTacToe") == 0)
-			{
-				// Init the game with our challenger names
-				gameInstance = Game(finalChallenger1, finalChallenger2, false, GameType::TICTACTOE);
-
-				// check if a game instance is running
-				if (gameInstance.IsPlayer(rakClient.thisUser.userName))
-				{
-					gameInstance.PlayerReady(rakClient.thisUser.userName, true);
-					cChat.In("Game started");
-					gameInstance.inProgress = true;
-					// randomize 
-					gameInstance.ticTacToe.turnIndex = a3randomMaxInt(1);
-
-				}
-				else
-				{
-					cChat.In("You are not a player in an active game session!");
-				}
-			}
-			// start a game of Checkers
-			else if (strcmp(finalGame, "Checkers") == 0)
-			{
-				// Init the game with our challenger names
-				gameInstance = Game(finalChallenger1, finalChallenger2, false, GameType::CHECKERS);
-			}
-
-			char msgFormat[512];
-			sprintf(msgFormat, "%s and %s will play %s! %s goes first!", finalChallenger1, finalChallenger2, finalGame, gameInstance.players[gameInstance.ticTacToe.turnIndex]);
-			cChat.In(msgFormat);
-
-
-			// Create our message delivery for the challenge
-			GameDelivery msgDelivery(ID_GAME_CHALLENGE, rakClient.thisUser.userName, msgFormat, -1, gameInstance.ticTacToe.turnIndex, finalChallenger1, finalChallenger2);
-			rakClient.peer->Send((const char*)&msgDelivery, sizeof(msgDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)challenger2Address, false);
-		
-
-			// challenge -> playerName -> game
-		}
-
-		//----------------GAME STATUS----------------//
-		else if (rakClient.thisUser.type == UserType::SERVER && strcmp(command, "gameStatus") == 0)
-		{
-			char msgFormat[512];
-			// Local game status
-			if (gameInstance.isLocal)
-			{
-				if (gameInstance.type == GameType::TICTACTOE)
-				{
-					sprintf(msgFormat, "Local TicTacToe");
-					cChat.In(msgFormat);
-				}
-				else if (gameInstance.type == GameType::CHECKERS)
-				{
-					sprintf(msgFormat, "Local Checkers");
-					cChat.In(msgFormat);
-				}
-			}
-			// Online game status
-			else if (gameInstance.isLocal == false)
-			{
-				if (gameInstance.type == GameType::TICTACTOE)
-				{
-					sprintf(msgFormat, "Online TicTacToe");
-					cChat.In(msgFormat);
-					sprintf(msgFormat, "%s | Ready: %i", gameInstance.players[0], gameInstance.ready[0]);
-					cChat.In(msgFormat);
-					sprintf(msgFormat, "%s | Ready: %i", gameInstance.players[1], gameInstance.ready[1]);
-					cChat.In(msgFormat);
-				}
-				else if (gameInstance.type == GameType::CHECKERS)
-				{
-					sprintf(msgFormat, "Online Checkers");
-					cChat.In(msgFormat);
-					sprintf(msgFormat, "%s | Ready: %i", gameInstance.players[0], gameInstance.ready[0]);
-					cChat.In(msgFormat);
-					sprintf(msgFormat, "%s | Ready: %i", gameInstance.players[1], gameInstance.ready[1]);
-					cChat.In(msgFormat);
-				}
-				else
-				{
-					cChat.In("No game has been created");
-				}
-			}
-			
-		}
-
-		
-
-		// Play the game locally
-		else if (rakClient.thisUser.type == UserType::SERVER && strcmp(command, "play") == 0)
-		{
-		char msgFormat[512];
-
-		// selects the game to be played 
-		char finalGame[512];
-		
-		char* temp;
-
-		// get game name to enter
-		temp = strtok(messageTmp, commandDelimiters);
-		strncpy(finalGame, temp, 512);
-
-		// pass input
-		if (strcmp(finalGame, "TicTacToe") == 0)
-		{
-			cChat.In("TicTacToe by yourself!");
-			gameInstance = Game("Player 1", "Player 2", true, GameType::TICTACTOE);
-			gameInstance.inProgress = true;
-			// set random start
-			gameInstance.ticTacToe.turnIndex = a3randomMaxInt(1);
-			sprintf(msgFormat, "%s goes first!", gameInstance.players[gameInstance.ticTacToe.turnIndex]);
-			cChat.In(msgFormat);
-		}
-		else if (strcmp(finalGame, "Checkers") == 0)
-		{
-			cChat.In("Checkers by yourself!");
-			gameInstance = Game("Player 1", "Player 2", true, GameType::CHECKERS);
-			gameInstance.inProgress = true;
-		}
-
-		}
-
-		// Invalid command
-		else
-		{
-			char msgFormat[512];
-			sprintf(msgFormat, "%s is an invalid command, type /help to see valid commands", command);
-			cChat.In(msgFormat);
 		}
 	}
 }
@@ -941,14 +674,22 @@ void a3DemoRenderTextChat(a3_DemoState const* demostate)
 	a3f32 textDepth = -1.00f;
 	const a3f32 textOffsetDelta = -0.08f;
 
-	// Renders chat log
-	int i;
-	for (i = cChat.bufferViewOffset; i < cChat.bufferViewOffset + cChat.CHAT_VIEW_MAX; i++)
+	if (!cChat.hideChat)
 	{
-		if (i >= 0 && i < cChat.bufferWriteLoc)
+		// Renders chat log
+		int i;
+		for (i = cChat.bufferViewOffset; i < cChat.bufferViewOffset + cChat.CHAT_VIEW_MAX; i++)
 		{
-			a3textDraw(demostate->text, textAlign, textOffset += textOffsetDelta, textDepth, 1, 1, 1, 1, "%s", cChat.buffer[i]);
+			if (i >= 0 && i < cChat.bufferWriteLoc)
+			{
+				a3textDraw(demostate->text, textAlign, textOffset += textOffsetDelta, textDepth, 1, 1, 1, 1, "%s", cChat.buffer[i]);
+			}
 		}
+	}
+	else
+	{
+		if (cChat.unreadMessages != 0)
+			a3textDraw(demostate->text, textAlign, textOffset + textOffsetDelta, textDepth, 1, 1, 1, 1, "[*%i]", cChat.unreadMessages);
 	}
 
 	// Renders users typebox
@@ -965,7 +706,7 @@ void a3DemoRenderClient(a3_DemoState const* demoState)
 
 }
 
-void a3DemoRenderBoard(a3_DemoState const* demoState)
+void a3DemoRenderGrid(a3_DemoState const* demoState)
 {
 	// amount to offset text as each line is rendered
 	a3f32 textAlign = 0.7f;
@@ -973,49 +714,6 @@ void a3DemoRenderBoard(a3_DemoState const* demoState)
 	a3f32 textDepth = -1.00f;
 	const a3f32 textOffsetDelta = 0.08f;
 
-	// Renders game board
-	int i;
-	int j;
-
-	int iterator = 0;
-
-	for (i = 0; i < 3; i++)
-	{
-		for (j = 0; j < 3; j++)
-		{
-			if (gameInstance.ticTacToe.GetSpaceState(i, j) != TicTacToeSpace::EMPTY)
-			{
-				if (gameInstance.ticTacToe.GetSpaceState(i, j) == TicTacToeSpace::TICTACTOE_X)
-				{
-					a3textDraw(demoState->text, textAlign + (j * textOffsetDelta), textOffset - (i * textOffsetDelta), textDepth, 1, 0, 0, 1, "X");
-				}
-				else if (gameInstance.ticTacToe.GetSpaceState(i, j) == TicTacToeSpace::TICTACTOE_O)
-				{
-					a3textDraw(demoState->text, textAlign + (j * textOffsetDelta), textOffset - (i * textOffsetDelta), textDepth, 0, 1, 0, 1, "O");
-				}
-			}
-			else
-			{
-				a3textDraw(demoState->text, textAlign + (j * textOffsetDelta), textOffset - (i * textOffsetDelta), textDepth, 1, 1, 1, 1, "%i", iterator);
-			}
-
-			iterator++;
-		}
-	}
-}
-
-void a3DemoRenderGame(a3_DemoState const* demoState)
-{
-	if (gameInstance.type == GameType::TICTACTOE)
-	{
-		// Renders users typebox
-		a3DemoRenderBoard(demoState);
-	}
-	else if (gameInstance.type == GameType::CHECKERS)
-	{
-		// Renders users typebox
-		a3textDraw(demoState->text, 0.8f, 0.8f, 1.0f, 1, 1, 1, 1, ":D");
-	}
 }
 
 
@@ -1053,11 +751,7 @@ void a3DemoUpdate(a3_DemoState const* demoState)
 	// Render all text for screen
 	a3DemoRenderClient(demoState);
 
-	// Render the game!!!!
-	if (gameInstance.inProgress)
-	{
-		a3DemoRenderGame(demoState);
-	}
+	a3DemoRenderGrid(demoState);
 
 	// Clear last buffer input (the input that was entered this frame)
 	cInput.ClearLastBuffer();
@@ -1422,13 +1116,6 @@ A3DYLIBSYMBOL void a3demoCB_keyRelease(a3_DemoState *demoState, a3i32 virtualKey
 // NOTE: there is no release counterpart
 A3DYLIBSYMBOL void a3demoCB_keyCharPress(a3_DemoState *demoState, a3i32 asciiKey)
 {
-	/*
-	a3ui32 demoSubMode = demoState->demoSubMode[demoState->demoMode];
-	const a3ui32 demoSubModeCount = demoState->demoSubModeCount[demoState->demoMode];
-	const a3ui32 demoOutput = demoState->demoOutputMode[demoState->demoMode][demoSubMode];
-	const a3ui32 demoOutputCount = demoState->demoOutputCount[demoState->demoMode][demoSubMode];
-	*/
-
 	// persistent state update
 	a3keyboardSetStateASCII(demoState->keyboard, (a3byte)asciiKey);
 
@@ -1443,6 +1130,13 @@ A3DYLIBSYMBOL void a3demoCB_keyCharPress(a3_DemoState *demoState, a3i32 asciiKey
 			// Remove previous input value
 			cInput.ClearLastValue();
 		}
+		break;
+
+	// Tab
+	case 9:
+		// toggles chat visability
+		cChat.hideChat = 1 - cChat.hideChat;
+		cChat.unreadMessages = 0;
 		break;
 
 	// Carriage return (Enter)
@@ -1462,110 +1156,17 @@ A3DYLIBSYMBOL void a3demoCB_keyCharPress(a3_DemoState *demoState, a3i32 asciiKey
 	case 27:
 		rakClient.connected = false;
 
+	// Tilda (UNREAD MESSAGES TEST)
+	case 96:
+		cChat.unreadMessages++;
+		break;
+
 	// Remaining input
 	default:
 		// If there is input, add it to input buffer
 		cInput.In(asciiKey);
 		break;
 	}
-
-	/*
-	// handle special cases immediately
-	switch (asciiKey)
-	{
-		// uncomment to make escape key kill the current demo
-		// if disabled, use 'exit demo' menu option
-//	case 27: 
-//		demoState->exitFlag = 1;
-//		break;
-
-		// reload (T) or toggle (t) text
-	case 'T':
-		if (!a3textIsInitialized(demoState->text))
-		{
-			a3demo_initializeText(demoState->text);
-			demoState->textInit = 1;
-		}
-		else
-		{
-			a3textRelease(demoState->text);
-			demoState->textInit = 0;
-		}
-		break;
-	case 't':
-		demoState->textMode = (demoState->textMode + 1) % demoState->textModeCount;
-		break;
-
-		// reload all shaders in real-time
-	case 'P':
-		a3demo_unloadShaders(demoState);
-		a3demo_loadShaders(demoState);
-		break;
-
-
-		// change pipeline mode
-	case '.':
-		demoState->demoMode = (demoState->demoMode + 1) % demoState->demoModeCount;
-		break;
-	case ',':
-		demoState->demoMode = (demoState->demoMode + demoState->demoModeCount - 1) % demoState->demoModeCount;
-		break;
-
-		// change pipeline stage
-	case '>':
-		demoSubMode = demoState->demoSubMode[demoState->demoMode] = (demoSubMode + 1) % demoSubModeCount;
-		break;
-	case '<':
-		demoSubMode = demoState->demoSubMode[demoState->demoMode] = (demoSubMode + demoSubModeCount - 1) % demoSubModeCount;
-		break;
-
-		// change stage output
-	case '}':
-		demoState->demoOutputMode[demoState->demoMode][demoSubMode] = (demoOutput + 1) % demoOutputCount;
-		break;
-	case '{':
-		demoState->demoOutputMode[demoState->demoMode][demoSubMode] = (demoOutput + demoOutputCount - 1) % demoOutputCount;
-		break;
-
-
-		// toggle grid
-	case 'g':
-		demoState->displayGrid = 1 - demoState->displayGrid;
-		break;
-
-		// toggle world axes
-	case 'x':
-		demoState->displayWorldAxes = 1 - demoState->displayWorldAxes;
-		break;
-
-		// toggle object axes
-	case 'z':
-		demoState->displayObjectAxes = 1 - demoState->displayObjectAxes;
-		break;
-
-		// toggle tangent bases on vertices or other
-	case 'B':
-		demoState->displayTangentBases = 1 - demoState->displayTangentBases;
-		break;
-
-
-		// update animation
-	case 'm':
-		demoState->updateAnimation = 1 - demoState->updateAnimation;
-		break;
-	}
-
-
-	// callback for current mode
-	switch (demoState->demoMode)
-	{
-		// main render pipeline
-	case demoStateMode_main:
-		a3demoCB_keyCharPress_main(demoState, asciiKey,
-			demoSubMode, demoOutput, demoSubModeCount, demoOutputCount);
-		break;
-	}
-	*/
 }
 
 // ASCII key is held
@@ -1594,17 +1195,6 @@ A3DYLIBSYMBOL void a3demoCB_keyCharHold(a3_DemoState *demoState, a3i32 asciiKey)
 		cInput.In(asciiKey);
 		break;
 	}
-
-	/*
-	// callback for current mode
-	switch (demoState->demoMode)
-	{
-		// main render pipeline
-	case demoStateMode_main:
-		a3demoCB_keyCharHold_main(demoState, asciiKey);
-		break;
-	}
-	*/
 }
 
 // mouse button is clicked
@@ -1634,30 +1224,12 @@ A3DYLIBSYMBOL void a3demoCB_mouseRelease(a3_DemoState *demoState, a3i32 button, 
 // mouse wheel is turned
 A3DYLIBSYMBOL void a3demoCB_mouseWheel(a3_DemoState *demoState, a3i32 delta, a3i32 cursorX, a3i32 cursorY)
 {
-	// controlled camera when zooming
-	// a3_DemoCamera* camera;
-
 	// persistent state update
 	a3mouseSetStateWheel(demoState->mouse, (a3_MouseWheelState)delta);
 	a3mouseSetPosition(demoState->mouse, cursorX, cursorY);
 
 	// set view location if scrolling
 	cChat.bufferViewOffset = max(0, min(cChat.bufferWriteLoc - cChat.CHAT_VIEW_MAX, cChat.bufferViewOffset + (-1 * delta)));
-
-	/*
-	switch (demoState->demoMode)
-	{
-		// main render pipeline
-	case demoStateMode_main:
-		// can use this to change zoom
-		// zoom should be faster farther away
-		camera = demoState->camera + demoState->activeCamera;
-		camera->fovy -= camera->ctrlZoomSpeed * (camera->fovy / a3real_oneeighty) * (a3f32)delta;
-		camera->fovy = a3clamp(camera->ctrlZoomSpeed, a3real_oneeighty - camera->ctrlZoomSpeed, camera->fovy);
-		a3demo_updateCameraProjection(camera);
-		break;
-	}
-	*/
 }
 
 // mouse moves

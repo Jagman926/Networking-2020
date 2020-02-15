@@ -13,9 +13,11 @@ public:
 	char buffer[512][512];
 	int bufferWriteLoc;
 	int bufferViewOffset;
+	int hideChat;
+	int unreadMessages;
 
 	//constructors
-	ClientChat() { bufferWriteLoc = 0, bufferViewOffset = 0; };
+	ClientChat() { bufferWriteLoc = 0, bufferViewOffset = 0; hideChat = 0; unreadMessages = 0; };
 
 	// Functions ------------------------------------------
 
