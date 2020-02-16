@@ -101,6 +101,18 @@ struct a3_DemoState
 
 // text structure for server ---------------------------------------------
 
+struct TextObject
+{
+public:
+	char textBuffer[512];
+	float r, g, b, a;
+	float xPos, yPos;
+
+	void SetText(char buffer[512]) { strncpy(textBuffer, buffer, 512); };
+	void SetColor(float rVal, float gVal, float bVal, float aVal = 1) { r = rVal; g = gVal; b = bVal; a = aVal; };
+	void SetPos(float x, float y) { xPos = x; yPos = y; };
+};
+
 TextObject textObject;
 
 // Client Variable Structures --------------------------------------------
@@ -690,18 +702,6 @@ void a3DemoNetworking_send(char message [512])
 			cChat.In("   !pos [x] [y]: changes text pos");
 		}
 		else if (strcmp(command, "text") == 0)
-		{
-			char newText[512];
-			char* temp;
-
-			// get final challenger name to enter
-			temp = strtok(messageTmp, messageDelimiters);
-			strncpy(newText, temp, 512);
-
-			// TEST UPDATE
-			textObject.SetText(newText);
-		}
-		else if (strcmp(command, "color") == 0)
 		{
 			float newR, newG, newB;
 
