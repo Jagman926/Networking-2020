@@ -198,6 +198,11 @@
     <ClCompile Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_DemoState\a3_DemoState_unloading.c" />
     <ClCompile Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_demo_callbacks.cpp" />
     <ClCompile Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_NetApp\a3_NetApp_Client.cpp" />
+    <ClCompile Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_NetApp\a3_NetApp_Event.cpp" />
+    <ClCompile Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_NetApp\a3_NetApp_EventManager.cpp" />
+    <ClCompile Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_NetApp\a3_NetApp_Event_Color.cpp" />
+    <ClCompile Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_NetApp\a3_NetApp_Event_Position.cpp" />
+    <ClCompile Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_NetApp\a3_NetApp_Event_Text.cpp" />
     <ClCompile Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\_utilities\a3_DemoRenderUtils.c" />
     <ClCompile Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\_utilities\a3_DemoSceneObject.c" />
     <ClCompile Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\_utilities\a3_NetApp\a3_RakNet_Core.cpp" />
@@ -207,6 +212,11 @@
     <ClInclude Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_DemoState.h" />
     <ClInclude Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_demo_callbacks.h" />
     <ClInclude Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_NetApp\a3_NetApp_Client.h" />
+    <ClInclude Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_NetApp\a3_NetApp_Event.h" />
+    <ClInclude Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_NetApp\a3_NetApp_EventManager.h" />
+    <ClInclude Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_NetApp\a3_NetApp_Event_Color.h" />
+    <ClInclude Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_NetApp\a3_NetApp_Event_Position.h" />
+    <ClInclude Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_NetApp\a3_NetApp_Event_Text.h" />
     <ClInclude Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\_utilities\a3_DemoRenderUtils.h" />
     <ClInclude Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\_utilities\a3_DemoSceneObject.h" />
     <ClInclude Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\_utilities\a3_DemoShaderProgram.h" />

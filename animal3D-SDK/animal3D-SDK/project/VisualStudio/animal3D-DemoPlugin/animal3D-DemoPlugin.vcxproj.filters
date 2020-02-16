@@ -70,6 +70,12 @@
     <Filter Include="Source Files\common\A3_DEMO\_utilities\a3_NetApp">
       <UniqueIdentifier>{c5b77f39-d5a3-4b13-837f-7367f74e1261}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\A3_DEMO\a3_NetApp\a3_Events">
+      <UniqueIdentifier>{77127269-e2c3-4b1a-aa3d-d07cc587c961}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\common\A3_DEMO\a3_Networking\a3_NetApp\a3_Events">
+      <UniqueIdentifier>{7c0efeca-1205-4c07-82f8-4f8552ddf5d8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="_src_win\main_dll.c">
@@ -108,6 +114,21 @@
     <ClCompile Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\_utilities\a3_NetApp\a3_RakNet_Core.cpp">
       <Filter>Source Files\common\A3_DEMO\_utilities\a3_NetApp</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_NetApp\a3_NetApp_Event.cpp">
+      <Filter>Source Files\common\A3_DEMO\a3_Networking\a3_NetApp\a3_Events</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_NetApp\a3_NetApp_Event_Color.cpp">
+      <Filter>Source Files\common\A3_DEMO\a3_Networking\a3_NetApp\a3_Events</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_NetApp\a3_NetApp_Event_Position.cpp">
+      <Filter>Source Files\common\A3_DEMO\a3_Networking\a3_NetApp\a3_Events</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_NetApp\a3_NetApp_Event_Text.cpp">
+      <Filter>Source Files\common\A3_DEMO\a3_Networking\a3_NetApp\a3_Events</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_NetApp\a3_NetApp_EventManager.cpp">
+      <Filter>Source Files\common\A3_DEMO\a3_Networking\a3_NetApp\a3_Events</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\source\animal3D-DemoPlugin\a3_dylib_config_export.h">
@@ -136,6 +157,21 @@
     </ClInclude>
     <ClInclude Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_NetApp\a3_NetApp_Client.h">
       <Filter>Header Files\A3_DEMO\a3_NetApp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_NetApp\a3_NetApp_Event.h">
+      <Filter>Header Files\A3_DEMO\a3_NetApp\a3_Events</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_NetApp\a3_NetApp_Event_Color.h">
+      <Filter>Header Files\A3_DEMO\a3_NetApp\a3_Events</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_NetApp\a3_NetApp_Event_Position.h">
+      <Filter>Header Files\A3_DEMO\a3_NetApp\a3_Events</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_NetApp\a3_NetApp_Event_Text.h">
+      <Filter>Header Files\A3_DEMO\a3_NetApp\a3_Events</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_NetApp\a3_NetApp_EventManager.h">
+      <Filter>Header Files\A3_DEMO\a3_NetApp\a3_Events</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

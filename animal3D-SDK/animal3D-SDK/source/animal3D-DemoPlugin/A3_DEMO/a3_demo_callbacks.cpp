@@ -49,6 +49,9 @@
 #include "A3_DEMO/_utilities/a3_NetApp/a3_RakNet_Core.h"
 #include "A3_DEMO/_utilities/a3_NetApp/a3_MessageIdentifiers.h"
 
+// Events
+#include "a3_Networking/a3_NetApp/a3_NetApp_EventManager.h"
+
 
 struct a3_DemoState
 {
@@ -97,18 +100,6 @@ struct a3_DemoState
 // line 72-73 is multi instance
 
 // text structure for server ---------------------------------------------
-
-struct TextObject
-{
-public:
-	char textBuffer[512];
-	float r, g, b, a;
-	float xPos, yPos;
-
-	void SetText(char buffer[512]) { strncpy(textBuffer, buffer, 512); };
-	void SetColor(float rVal, float gVal, float bVal, float aVal = 1) { r = rVal; g = gVal; b = bVal; a = aVal; };
-	void SetPos(float x, float y) { xPos = x; yPos = y; };
-};
 
 TextObject textObject;
 

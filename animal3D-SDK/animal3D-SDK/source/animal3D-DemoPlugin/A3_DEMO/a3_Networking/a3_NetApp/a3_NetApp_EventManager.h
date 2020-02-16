@@ -3,6 +3,18 @@
 #include <stdlib.h>
 #include "a3_NetApp_Event.h"
 
+struct TextObject
+{
+public:
+	char textBuffer[512];
+	float r, g, b, a;
+	float xPos, yPos;
+
+	void SetText(char buffer[512]) { strncpy(textBuffer, buffer, 512); };
+	void SetColor(float rVal, float gVal, float bVal, float aVal = 1) { r = rVal; g = gVal; b = bVal; a = aVal; };
+	void SetPos(float x, float y) { xPos = x; yPos = y; };
+};
+
 class EventManager
 {
 public:
