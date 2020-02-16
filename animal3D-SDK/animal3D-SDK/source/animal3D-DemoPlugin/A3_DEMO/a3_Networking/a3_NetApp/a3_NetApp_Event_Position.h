@@ -3,15 +3,15 @@
 
 #include "a3_NetApp_Event.h"
 
-class Event_Position : Event
+class Event_Position : public Event
 {
 public:
 	// Default CTOR
 	Event_Position() { x = 0, y = 0; }
 	// Data CTOR
-	Event_Position(float newX, float newY) { x = newX, y = newY; };
+	Event_Position(float newX, float newY);
 	// ------------------FUNCTIONS -----------------//
-	virtual void Dispatch();
+	virtual void Dispatch(TextObject* textObj);
 
 private:
 

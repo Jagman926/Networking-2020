@@ -6,12 +6,20 @@
 class EventManager
 {
 public:
+
+	// Default constructor
+	EventManager();
+
 	// managed array of events
-	Event* events[100] = {};
+	Event* events[10];
 	// iterator for reading through events
 	int eventIterator = 0;
 
+	// the text object we're modifying
+	TextObject textObject;
+
 	// ------------------FUNCTIONS -----------------//
+	
 	// Adds a new event to the list of events
 	void AddNewEvent(Event* theEvent);
 	// Removes an event at the specified index

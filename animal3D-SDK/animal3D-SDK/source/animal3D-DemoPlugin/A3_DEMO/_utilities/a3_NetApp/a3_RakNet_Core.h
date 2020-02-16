@@ -5,6 +5,7 @@
 #include "RakNet/MessageIdentifiers.h"
 #include "Raknet/BitStream.h"
 #include "Raknet/RakNetTypes.h"
+#include "A3_DEMO/a3_Networking/a3_NetApp/a3_NetApp_Event.h"
 #include <string>
 
 
@@ -20,6 +21,8 @@ enum MessageIdentifiers
 	ID_CHAT_MSG_REQUEST,
 	ID_CHAT_MSG_DELIVERY,
 	ID_KICK,
+	ID_TEXTOBJECT_EVENT_UPDATE,
+	ID_TEXTOBJECT_SERVER_UPDATE
 };
 
 enum UserType
@@ -28,6 +31,13 @@ enum UserType
 	SERVER,
 	PLAYER,
 	SPECTATOR,
+};
+
+enum EventType
+{
+	TEXT,
+	COLOR,
+	POSITION
 };
 
 struct User
@@ -128,27 +138,34 @@ public:
 #pragma pack (pop)
 
 #pragma pack (push, 1)
-struct GameDelivery
+struct EventMessage
+{
+public:
+	EventMessage() {};
+	// leading byte
+	RakNet::MessageID msgID;
+	// Event identifier
+	EventType eventType;
+	// object to access and modify
+	TextObject textObject;
+
+	
+	// Functions
+	EventMessage(RakNet::MessageID ID, EventType type, TextObject obj) { msgID = ID, eventType = type, textObject = obj; };
+
+};
+#pragma pack (pop)
+
+#pragma pack (push, 1)
+struct TextObjectDelivery
 {
 public:
 	// leading byte
 	RakNet::MessageID msgID;
-	// The name of the participant from whom the message originated; since this could include the host, they should be a recognizable name.
-	char senderUserName[512];
-	// The contents of the message.  Should have a maximum length.
-	char msgTxt[512];
-	// index for board
-	int boardIndex;
-	// player turn index
-	int playerTurnIndex;
-	// challenger 1 name
-	char challenger1[512];
-	// challenger 2 name
-	char challenger2[512];
-	
+	// object for text
+	TextObject textObject;
 	// Functions
-	GameDelivery(RakNet::MessageID ID, char name[], char msg[], int bIndex, int turnIndex, char chal1[], char chal2[]) { msgID = ID, strcpy(senderUserName, name), strcpy(msgTxt, msg), boardIndex = bIndex, playerTurnIndex = turnIndex, strcpy(challenger1, chal1), strcpy(challenger2, chal2); };
-	//void CreatePacket(RakNet::MessageID ID, std::string string) { msgID = ID, msgString = string; };
+	TextObjectDelivery(RakNet::MessageID ID, TextObject obj) { msgID = ID, textObject = obj; };
 
 };
 #pragma pack (pop)

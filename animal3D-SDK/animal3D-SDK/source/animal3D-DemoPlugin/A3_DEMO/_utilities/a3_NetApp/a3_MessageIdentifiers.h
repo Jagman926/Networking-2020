@@ -16,6 +16,7 @@ enum MessageIdentifiers
 	ID_CHAT_MSG_REQUEST,
 	ID_CHAT_MSG_DELIVERY,
 	ID_KICK,
+	ID_EVENT_TEXTOBJECT
 };
 
 #endif // !RAKNET_CORE_H

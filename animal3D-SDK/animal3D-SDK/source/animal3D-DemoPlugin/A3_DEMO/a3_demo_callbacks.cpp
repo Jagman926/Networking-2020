@@ -51,6 +51,9 @@
 
 // Events
 #include "a3_Networking/a3_NetApp/a3_NetApp_EventManager.h"
+#include "A3_DEMO/a3_Networking/a3_NetApp/a3_NetApp_Event_Text.h"
+#include "A3_DEMO/a3_Networking/a3_NetApp/a3_NetApp_Event_Color.h"
+#include "A3_DEMO/a3_Networking/a3_NetApp/a3_NetApp_Event_Position.h"
 
 
 struct a3_DemoState
@@ -101,19 +104,8 @@ struct a3_DemoState
 
 // text structure for server ---------------------------------------------
 
-struct TextObject
-{
-public:
-	char textBuffer[512];
-	float r, g, b, a;
-	float xPos, yPos;
-
-	void SetText(char buffer[512]) { strncpy(textBuffer, buffer, 512); };
-	void SetColor(float rVal, float gVal, float bVal, float aVal = 1) { r = rVal; g = gVal; b = bVal; a = aVal; };
-	void SetPos(float x, float y) { xPos = x; yPos = y; };
-};
-
-TextObject textObject;
+// event manager for processing of all events ----------------------------
+EventManager eventManager;
 
 // Client Variable Structures --------------------------------------------
 
@@ -478,6 +470,67 @@ void a3DemoNetworking_recieve()
 			a3DemoNetworking_lobby_init();
 		}
 		break;
+		
+		case ID_TEXTOBJECT_EVENT_UPDATE:
+		{
+			// Recieve event packet
+			EventMessage* p = (EventMessage*)rakClient.packet->data;
+			// determine what data to use based on type of event
+			if (p->eventType == TEXT)
+			{
+				eventManager.textObject.SetText(p->textObject.textBuffer);
+				// Create event
+				Event_Text textEvent(p->textObject.textBuffer);
+				// Use pointer to that event for the array
+				Event_Text* textPointer = &textEvent;
+				
+				// Add it to the manager
+				eventManager.AddNewEvent(textPointer);
+			}
+				
+			else if (p->eventType == COLOR)
+			{
+				eventManager.textObject.SetColor(p->textObject.r, p->textObject.g, p->textObject.b);
+				// Create event
+				Event_Color colorEvent(p->textObject.r, p->textObject.g, p->textObject.b);
+				// Use pointer to that event for the array
+				Event_Color* colorPointer = &colorEvent;
+				
+				// Add it to the manager
+				eventManager.AddNewEvent(colorPointer);
+			}
+				
+				
+			else if (p->eventType == POSITION)
+			{
+				eventManager.textObject.SetPos(p->textObject.xPos, p->textObject.yPos);
+				// Create event
+				Event_Position posEvent(p->textObject.xPos, p->textObject.yPos);
+				// Use pointer to that event for the array
+				Event_Position* posPointer = &posEvent;
+				
+				// Add it to the manager
+				eventManager.AddNewEvent(posPointer);
+			}
+
+
+		}
+		break;
+
+		case ID_TEXTOBJECT_SERVER_UPDATE:
+		{
+			// Recieve event packet
+			TextObjectDelivery* p = (TextObjectDelivery*)rakClient.packet->data;
+			
+			eventManager.textObject.SetText(p->textObject.textBuffer);
+			
+			eventManager.textObject.SetColor(p->textObject.r, p->textObject.g, p->textObject.b);
+			
+			eventManager.textObject.SetPos(p->textObject.xPos, p->textObject.yPos);
+			
+			
+		}
+		break;
 
 		default:
 			sprintf(msgFormat, "Message with identifier %i has arrived", rakClient.packet->data[0]);
@@ -703,6 +756,22 @@ void a3DemoNetworking_send(char message [512])
 		}
 		else if (strcmp(command, "text") == 0)
 		{
+			char newText[512];
+			char* temp;
+
+			// get words
+			temp = strtok(messageTmp, messageDelimiters);
+			strncpy(newText, temp, 512);
+
+			eventManager.textObject.SetText(newText);
+			
+			// Send event with RakNet
+			EventMessage eventSend(ID_TEXTOBJECT_EVENT_UPDATE, TEXT, eventManager.textObject);
+			rakClient.peer->Send((const char*)&eventSend, sizeof(eventSend), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.hostSystemAddress, false);
+			
+		}
+		else if (strcmp(command, "color") == 0)
+		{
 			float newR, newG, newB;
 
 			char* temp;
@@ -717,8 +786,12 @@ void a3DemoNetworking_send(char message [512])
 			temp = strtok(NULL, commandDelimiters);
 			newB = strtof(temp, NULL);
 
-			// TEST UPDATE
-			textObject.SetColor(newR, newG, newB);
+			eventManager.textObject.SetColor(newR, newG, newB);
+
+
+			// Send event with RakNet
+			EventMessage eventSend(ID_TEXTOBJECT_EVENT_UPDATE, COLOR, eventManager.textObject);
+			rakClient.peer->Send((const char*)&eventSend, sizeof(eventSend), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.hostSystemAddress, false);
 		}
 		else if (strcmp(command, "pos") == 0)
 		{
@@ -733,8 +806,11 @@ void a3DemoNetworking_send(char message [512])
 			temp = strtok(NULL, commandDelimiters);
 			newY = strtof(temp, NULL);
 
-			// TEST UPDATE
-			textObject.SetPos(newX, newY);
+			eventManager.textObject.SetPos(newX, newY);
+			
+			//  Send event with RakNet
+			EventMessage eventSend(ID_TEXTOBJECT_EVENT_UPDATE, POSITION, eventManager.textObject);
+			rakClient.peer->Send((const char*)&eventSend, sizeof(eventSend), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.hostSystemAddress, false);
 		}
 		else
 		{
@@ -785,7 +861,7 @@ void a3DemoRenderClient(a3_DemoState const* demoState)
 
 void a3DemoRenderTextObject(a3_DemoState const* demostate)
 {
-	a3textDraw(demostate->text, textObject.xPos, textObject.yPos, -1.00f, textObject.r, textObject.g, textObject.b, textObject.a, "%s", textObject.textBuffer);
+	a3textDraw(demostate->text, eventManager.textObject.xPos, eventManager.textObject.yPos, -1.00f, eventManager.textObject.r, eventManager.textObject.g, eventManager.textObject.b, eventManager.textObject.a, "%s", eventManager.textObject.textBuffer);
 }
 
 void a3DemoUpdate(a3_DemoState const* demoState) 
@@ -804,17 +880,26 @@ void a3DemoUpdate(a3_DemoState const* demoState)
 	if (!rakClient.connected)
 	{
 		a3DemoNetworking_init();
-		// TEST
-		textObject.SetText("Testing!");
-		textObject.SetColor(1, 0, 0);
-		textObject.SetPos(.7f, .8f);
+		
 	}
 	else
 	{
+		
 		// Packet handling
 		a3DemoNetworking_recieve();
+
+		// Process events from Event Manager
+		eventManager.ProcessEvents();
+
+		if (rakClient.thisUser.type == SERVER)
+		{
+			TextObjectDelivery broadcastUpdates(ID_TEXTOBJECT_SERVER_UPDATE, eventManager.textObject);
+			rakClient.peer->Send((const char*)&broadcastUpdates, sizeof(broadcastUpdates), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.thisUser.systemAddress, true);
+		}
+
 		// Input parse and Send
 		a3DemoNetworking_send(cInput.lastInputBuffer);
+
 	}
 
 	/*

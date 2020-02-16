@@ -1,14 +1,14 @@
 #ifndef A3_NETAPP_EVENT_H
 #define A3_NETAPP_EVENT_H
 #include <stdlib.h>
-#include <string>
+#include "a3_NetApp_TextObject.h"
 
 class Event
 {
 public:
 	// CTOR
 	Event() {};
-	virtual void Dispatch () = 0;
+	virtual void Dispatch (TextObject* textObj) = 0;
 private:
 };
 
