@@ -20,9 +20,6 @@ enum MessageIdentifiers
 	ID_CHAT_MSG_REQUEST,
 	ID_CHAT_MSG_DELIVERY,
 	ID_KICK,
-	ID_GAME_CHALLENGE,
-	ID_GAME_DELIVERY
-	
 };
 
 enum UserType

@@ -47,6 +47,7 @@
 
 // Network Includes
 #include "A3_DEMO/_utilities/a3_NetApp/a3_RakNet_Core.h"
+#include "A3_DEMO/_utilities/a3_NetApp/a3_MessageIdentifiers.h"
 
 
 struct a3_DemoState
@@ -95,11 +96,28 @@ struct a3_DemoState
 // line 70 is single instance
 // line 72-73 is multi instance
 
-// Client Variable Structures ----------------------------------------------------------
+// text structure for server ---------------------------------------------
+
+struct TextObject
+{
+public:
+	char textBuffer[512];
+	float r, g, b, a;
+	float xPos, yPos;
+
+	void SetText(char buffer[512]) { strncpy(textBuffer, buffer, 512); };
+	void SetColor(float rVal, float gVal, float bVal, float aVal = 1) { r = rVal; g = gVal; b = bVal; a = aVal; };
+	void SetPos(float x, float y) { xPos = x; yPos = y; };
+};
+
+TextObject textObject;
+
+// Client Variable Structures --------------------------------------------
 
 ClientChat cChat;
 ClientInput cInput;
 RakClient rakClient;
+
 // Lobby Prompts ---------------------------------------------------------
 
 char userNamePrompt[512];
@@ -474,7 +492,7 @@ void a3DemoNetworking_recieve()
 void a3DemoNetworking_send(char message [512]) 
 {
 	// Parsing variables
-	char commandDelimiters[] = " /\n\r";
+	char commandDelimiters[] = " !/\n\r";
 	char messageDelimiters[] = "\n\r";
 	// Parsed information
 	char* command;
@@ -664,6 +682,74 @@ void a3DemoNetworking_send(char message [512])
 			}
 		}
 	}
+	// Text object functions
+	else if (cInput.lastInputBuffer[0] == '!')
+	{
+		// Parse for command name
+		command = strtok(message, commandDelimiters);
+		// Save message text
+		messageTmp = strtok(NULL, messageDelimiters);
+
+		// -------- Change Text ---------
+		if (strcmp(command, "help") == 0)
+		{
+			cChat.In("Text Object Commands:");
+			cChat.In("   !text [text]: changes text string");
+			cChat.In("   !color [r] [g] [b]: changes text color");
+			cChat.In("   !pos [x] [y]: changes text pos");
+		}
+		else if (strcmp(command, "text") == 0)
+		{
+			char newText[512];
+			char* temp;
+
+			// get final challenger name to enter
+			temp = strtok(messageTmp, messageDelimiters);
+			strncpy(newText, temp, 512);
+
+			// TEST UPDATE
+			textObject.SetText(newText);
+		}
+		else if (strcmp(command, "color") == 0)
+		{
+			float newR, newG, newB;
+
+			char* temp;
+
+			// get new r value
+			temp = strtok(messageTmp, commandDelimiters);
+			newR = strtof(temp, NULL);
+			// get new g value
+			temp = strtok(NULL, commandDelimiters);
+			newG = strtof(temp, NULL);
+			// get new b value
+			temp = strtok(NULL, commandDelimiters);
+			newB = strtof(temp, NULL);
+
+			// TEST UPDATE
+			textObject.SetColor(newR, newG, newB);
+		}
+		else if (strcmp(command, "pos") == 0)
+		{
+			float newX, newY;
+
+			char* temp;
+
+			// get new r value
+			temp = strtok(messageTmp, commandDelimiters);
+			newX = strtof(temp, NULL);
+			// get new g value
+			temp = strtok(NULL, commandDelimiters);
+			newY = strtof(temp, NULL);
+
+			// TEST UPDATE
+			textObject.SetPos(newX, newY);
+		}
+		else
+		{
+			cChat.In("Invalid Command: use /help or !help for commands");
+		}
+	}
 }
 
 void a3DemoRenderTextChat(a3_DemoState const* demostate)
@@ -700,23 +786,16 @@ void a3DemoRenderClient(a3_DemoState const* demoState)
 {
 	// clear color
 	glClear(GL_COLOR_BUFFER_BIT);
+
 	// render chat
 	a3DemoRenderTextChat(demoState);
 
-
 }
 
-void a3DemoRenderGrid(a3_DemoState const* demoState)
+void a3DemoRenderTextObject(a3_DemoState const* demostate)
 {
-	// amount to offset text as each line is rendered
-	a3f32 textAlign = 0.7f;
-	a3f32 textOffset = 0.8f;
-	a3f32 textDepth = -1.00f;
-	const a3f32 textOffsetDelta = 0.08f;
-
+	a3textDraw(demostate->text, textObject.xPos, textObject.yPos, -1.00f, textObject.r, textObject.g, textObject.b, textObject.a, "%s", textObject.textBuffer);
 }
-
-
 
 void a3DemoUpdate(a3_DemoState const* demoState) 
 {
@@ -732,7 +811,13 @@ void a3DemoUpdate(a3_DemoState const* demoState)
 	*/
 
 	if (!rakClient.connected)
+	{
 		a3DemoNetworking_init();
+		// TEST
+		textObject.SetText("Testing!");
+		textObject.SetColor(1, 0, 0);
+		textObject.SetPos(.7f, .8f);
+	}
 	else
 	{
 		// Packet handling
@@ -751,7 +836,9 @@ void a3DemoUpdate(a3_DemoState const* demoState)
 	// Render all text for screen
 	a3DemoRenderClient(demoState);
 
-	a3DemoRenderGrid(demoState);
+	// Update text object
+	if(rakClient.connected)
+		a3DemoRenderTextObject(demoState);
 
 	// Clear last buffer input (the input that was entered this frame)
 	cInput.ClearLastBuffer();
