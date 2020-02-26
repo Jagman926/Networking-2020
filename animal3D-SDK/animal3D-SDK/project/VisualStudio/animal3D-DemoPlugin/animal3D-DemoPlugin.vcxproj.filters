@@ -129,6 +129,9 @@
     <ClCompile Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_NetApp\a3_NetApp_EventManager.cpp">
       <Filter>Source Files\common\A3_DEMO\a3_Networking\a3_NetApp\a3_Events</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\_utilities\a3_NetApp\a3_PhysicsManager.cpp">
+      <Filter>Source Files\common\A3_DEMO\_utilities\a3_NetApp</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\source\animal3D-DemoPlugin\a3_dylib_config_export.h">
@@ -175,6 +178,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\a3_Networking\a3_NetApp\a3_NetApp_TextObject.h">
       <Filter>Header Files\A3_DEMO\a3_NetApp\a3_Events</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\source\animal3D-DemoPlugin\A3_DEMO\_utilities\a3_NetApp\a3_PhysicsManager.h">
+      <Filter>Header Files\A3_DEMO\a3_NetApp</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
