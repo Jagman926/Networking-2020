@@ -55,6 +55,9 @@
 #include "A3_DEMO/a3_Networking/a3_NetApp/a3_NetApp_Event_Color.h"
 #include "A3_DEMO/a3_Networking/a3_NetApp/a3_NetApp_Event_Position.h"
 
+// Physics Manager
+#include "A3_DEMO/_utilities/a3_NetApp/a3_PhysicsManager.h"
+
 
 struct a3_DemoState
 {
@@ -102,9 +105,12 @@ struct a3_DemoState
 // line 70 is single instance
 // line 72-73 is multi instance
 
-// text structure for server ---------------------------------------------
+// physics object manager ---------------------------------------------
+
+PhysicsManager physicsManager;
 
 // event manager for processing of all events ----------------------------
+
 EventManager eventManager;
 
 // Client Variable Structures --------------------------------------------
