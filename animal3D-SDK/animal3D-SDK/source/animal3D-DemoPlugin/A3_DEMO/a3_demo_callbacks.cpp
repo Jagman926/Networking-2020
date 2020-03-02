@@ -589,7 +589,7 @@ void a3DemoNetworking_recieve()
 
 			// broadcast to all clients
 			// Send to all users
-			PhysicsObjectDelivery objectsDelivery(ID_PHYSICSOBJECT_CLIENT_UPDATE, *p->physObjects);
+			PhysicsObjectDelivery objectsDelivery(ID_PHYSICSOBJECT_CLIENT_UPDATE, p->physObjects);
 			rakClient.peer->Send((const char*)&objectsDelivery, sizeof(objectsDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.thisUser.systemAddress, true);
 
 		}
@@ -958,7 +958,7 @@ void a3DemoNetworkingModeUpdate(a3_DemoState const* demostate)
 		if (physicsManager.physicsCircleManager[0][0])
 		{
 			// Send physics objects
-			PhysicsObjectDelivery objectsDelivery(ID_PHYSICSOBJECT_SERVER_UPDATE, **physicsManager.physicsCircleManager[1]);
+			PhysicsObjectDelivery objectsDelivery(ID_PHYSICSOBJECT_SERVER_UPDATE, *physicsManager.physicsCircleManager[0]);
 			rakClient.peer->Send((const char*)&objectsDelivery, sizeof(objectsDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.hostSystemAddress, false);
 		}
 	}

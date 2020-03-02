@@ -190,7 +190,7 @@ public:
 	// object for text
 	PhysicsCircleObject physObjects[OBJ_MAX];
 	// Functions
-	PhysicsObjectDelivery(RakNet::MessageID ID, PhysicsCircleObject obj) { msgID = ID, physObjects[OBJ_MAX] = obj; };
+	PhysicsObjectDelivery(RakNet::MessageID ID, PhysicsCircleObject obj[OBJ_MAX]) { msgID = ID, *physObjects = *obj; };
 
 };
 #pragma pack (pop)
