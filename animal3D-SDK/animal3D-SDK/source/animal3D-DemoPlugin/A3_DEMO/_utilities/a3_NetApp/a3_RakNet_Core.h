@@ -40,6 +40,14 @@ enum EventType
 	POSITION
 };
 
+enum NetworkMode
+{
+	INVALID = 0,
+	DATA_PUSH,
+	DATA_SHARE,
+	DATA_COUPLED,
+};
+
 struct User
 {
 public:
@@ -204,6 +212,9 @@ struct RakClient
 
 	// Packet variable to read through in NetUpdate
 	RakNet::Packet* packet;	
+
+	// Network Mode
+	NetworkMode networkMode = INVALID;
 };
 
 #endif // !RAKNET_CORE_H

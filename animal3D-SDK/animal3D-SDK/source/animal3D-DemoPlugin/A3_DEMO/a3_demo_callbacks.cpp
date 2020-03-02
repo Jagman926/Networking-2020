@@ -125,6 +125,7 @@ RakClient rakClient;
 char userNamePrompt[512];
 char userTypePrompt[512];
 char ipConnectPrompt[512];
+char networkingPrompt[512];
 
 
 void a3DemoNetworking_lobby_init()
@@ -136,6 +137,7 @@ void a3DemoNetworking_lobby_init()
 	strcpy(userNamePrompt, "Enter Username");
 	strcpy(userTypePrompt, "Would you like to Join (J) or Host (H) a chat room? (D) to Disconnect");
 	strcpy(ipConnectPrompt, "Enter server IP or (L) for 127.0.0.1");
+	strcpy(networkingPrompt, "Choose Netoworking Type: Data-Push (1) | Data-Share (2) | Data-Coupled (3)");
 
 	// Reset username and usertype (inputted from prompts in lobby)
 	memset(rakClient.thisUser.userName, 0, sizeof rakClient.thisUser.userName);
@@ -232,14 +234,38 @@ void a3DemoNetworking_init()
 			// Server initialization
 			if (rakClient.thisUser.type == SERVER)
 			{
-				// Clear chat
-				cChat.ClearChatBuffer();
-				// Notify starting server
-				cChat.In("Server Started!");
-				// Set connected
-				rakClient.connected = true;
-				// We need to let the server accept incoming connections from the clients
-				rakClient.peer->SetMaximumIncomingConnections(rakClient.maxClients);
+				// Networking mode
+				if (networkingPrompt[0] != 0)
+				{
+					cChat.In(networkingPrompt);
+					memset(networkingPrompt, 0, sizeof networkingPrompt);
+				}
+				else if (rakClient.networkMode == INVALID)
+				{
+					if (cInput.lastInputBuffer[0] == '1')
+					{
+						rakClient.networkMode = DATA_PUSH;
+					}
+					else if (cInput.lastInputBuffer[0] == '2')
+					{
+						rakClient.networkMode = DATA_SHARE;
+					}
+					else if (cInput.lastInputBuffer[0] == '3')
+					{
+						rakClient.networkMode = DATA_COUPLED;
+					}
+				}
+				else
+				{
+					// Clear chat
+					cChat.ClearChatBuffer();
+					// Notify starting server
+					cChat.In("Server Started!");
+					// Set connected
+					rakClient.connected = true;
+					// We need to let the server accept incoming connections from the clients
+					rakClient.peer->SetMaximumIncomingConnections(rakClient.maxClients);
+				}
 			}
 			// Player initialization
 			else
