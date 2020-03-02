@@ -5,11 +5,11 @@ struct PhysicsCircleObject
 {
 public:
 	// position of object on screen
-	float xPos, yPos;
+	float xPos = 0.0f, yPos = 0.0f;
 	// current velocity of object in 2D space
-	float xVel, yVel;
+	float xVel = 0.0f, yVel = 0.0f;
 	// object radius
-	float radius;
+	float radius = 0.0f;
 
 	// functions
 	//ctor
@@ -36,18 +36,22 @@ public:
 	// master 2D array of all user arrays
 	PhysicsCircleObject* physicsCircleManager[PLYR_MAX][OBJ_MAX];
 	// current number of physics objects locally
-	int numOfLocalObjs;
+	int numOfLocalObjs = 0;
 
 	// Remote array tracking
-	int numRemoteArrays;
+	int numRemoteArrays = 0;
 
 	// functions
 	//ctor
 	PhysicsManager();
+	// init
+	void InitAllLocalsToZero();
 	// add
 	bool AddLocalCircleObject(PhysicsCircleObject obj);
 	// delete last
 	bool DeleteLastLocalCircleObject();
+	// delete remotes
+	bool ClearAllRemoteArrays();
 	// copy circle physics object array to master
 	bool CopyPhysicsCircleObjectArray(PhysicsCircleObject objArray[OBJ_MAX]);
 	// Update objects

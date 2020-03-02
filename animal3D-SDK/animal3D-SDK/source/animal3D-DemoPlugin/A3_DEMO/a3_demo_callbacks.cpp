@@ -917,12 +917,15 @@ void a3DemoRenderPhysicsObjects(a3_DemoState const* demostate)
 	for (int i = 0; i < PLYR_MAX; i++)
 		for (int j = 0; j < OBJ_MAX; j++)
 		{
-			if (physicsManager.physicsCircleManager[i][j])
+			if (physicsManager.physicsCircleManager[i][j] && physicsManager.physicsCircleManager[i][j]->radius != 0)
 			{
 				PhysicsCircleObject* currObj = physicsManager.physicsCircleManager[i][j];
 				float screenX = (currObj->xPos * demostate->windowWidthInv * 2.0f) - 1.0f;
 				float screenY = (currObj->yPos * demostate->windowHeightInv * 2.0f) - 1.0f;
-				a3textDraw(demostate->text, screenX , -screenY, -1.00f, 0.0f, 1.0f, 0.0f, 1.0f, "%c", 'o');
+				if (i == 0)
+					a3textDraw(demostate->text, screenX , -screenY, -1.00f, 0.0f, 1.0f, 0.0f, 1.0f, "%c", 'o');
+				else if (i == 1)
+					a3textDraw(demostate->text, screenX, -screenY, -1.00f, 1.0f, 0.0f, 0.0f, 1.0f, "%c", 'o');
 			}
 		}
 }
@@ -960,7 +963,11 @@ void a3DemoNetworkingModeUpdate(a3_DemoState const* demostate)
 			// Send physics objects
 			PhysicsObjectDelivery objectsDelivery(ID_PHYSICSOBJECT_SERVER_UPDATE, *physicsManager.physicsCircleManager[0]);
 			rakClient.peer->Send((const char*)&objectsDelivery, sizeof(objectsDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.hostSystemAddress, false);
+
+			// Clear array every frame
+			physicsManager.ClearAllRemoteArrays();
 		}
+		
 	}
 }
 
@@ -1168,6 +1175,8 @@ A3DYLIBSYMBOL a3_DemoState *a3demoCB_load(a3_DemoState *demoState, a3boolean hot
 				if (rakClient.peer)
 				{
 					a3DemoNetworking_lobby_init();
+					physicsManager.InitAllLocalsToZero();
+
 				}
 			}
 
@@ -1513,7 +1522,7 @@ A3DYLIBSYMBOL void a3demoCB_mouseRelease(a3_DemoState *demoState, a3i32 button, 
 			// Get last object in local physics list (Assume this is the object that was placed and not set yet)
 			PhysicsCircleObject * obj = physicsManager.physicsCircleManager[0][physicsManager.numOfLocalObjs - 1];
 			// Set object velocity based on distance between spawn point and mouse release point
-			obj->SetVelocity(obj->xPos - cursorX, obj->yPos - cursorY);
+			obj->SetVelocity((obj->xPos - cursorX) * 0.1f, (obj->yPos - cursorY) * 0.1f);
 		}
 	}
 }
