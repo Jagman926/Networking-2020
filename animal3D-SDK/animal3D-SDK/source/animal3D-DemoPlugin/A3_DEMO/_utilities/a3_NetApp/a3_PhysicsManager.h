@@ -38,6 +38,9 @@ public:
 	// current number of physics objects locally
 	int numOfLocalObjs;
 
+	// Remote array tracking
+	int numRemoteArrays;
+
 	// functions
 	//ctor
 	PhysicsManager();
@@ -46,7 +49,7 @@ public:
 	// delete last
 	bool DeleteLastLocalCircleObject();
 	// copy circle physics object array to master
-	bool CopyPhysicsCircleObjectArray(int userIndex, PhysicsCircleObject objArray[OBJ_MAX]);
+	bool CopyPhysicsCircleObjectArray(PhysicsCircleObject objArray[OBJ_MAX]);
 	// Update objects
 	void UpdateObjects(float windowWidth, float windowHeight);
 };

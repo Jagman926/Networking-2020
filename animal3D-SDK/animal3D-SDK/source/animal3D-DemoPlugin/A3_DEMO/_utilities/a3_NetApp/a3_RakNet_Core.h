@@ -6,6 +6,7 @@
 #include "Raknet/BitStream.h"
 #include "Raknet/RakNetTypes.h"
 #include "A3_DEMO/a3_Networking/a3_NetApp/a3_NetApp_Event.h"
+#include "A3_DEMO/_utilities/a3_NetApp/a3_PhysicsManager.h"
 #include <string>
 
 
@@ -22,7 +23,9 @@ enum MessageIdentifiers
 	ID_CHAT_MSG_DELIVERY,
 	ID_KICK,
 	ID_TEXTOBJECT_EVENT_UPDATE,
-	ID_TEXTOBJECT_SERVER_UPDATE
+	ID_TEXTOBJECT_SERVER_UPDATE,
+	ID_PHYSICSOBJECT_CLIENT_UPDATE,
+	ID_PHYSICSOBJECT_SERVER_UPDATE
 };
 
 enum UserType
@@ -140,7 +143,7 @@ public:
 
 	// Functions
 	ChatMessageDelivery(RakNet::MessageID ID, char name[], bool priv, char msg[]) { msgID = ID, strcpy(senderUserName, name), isPrivate = priv, strcpy(msgTxt, msg); };
-	//void CreatePacket(RakNet::MessageID ID, std::string string) { msgID = ID, msgString = string; };
+
 
 };
 #pragma pack (pop)
@@ -174,6 +177,20 @@ public:
 	TextObject textObject;
 	// Functions
 	TextObjectDelivery(RakNet::MessageID ID, TextObject obj) { msgID = ID, textObject = obj; };
+
+};
+#pragma pack (pop)
+
+#pragma pack (push, 1)
+struct PhysicsObjectDelivery
+{
+public:
+	// leading byte
+	RakNet::MessageID msgID;
+	// object for text
+	PhysicsCircleObject physObjects[OBJ_MAX];
+	// Functions
+	PhysicsObjectDelivery(RakNet::MessageID ID, PhysicsCircleObject obj) { msgID = ID, physObjects[OBJ_MAX] = obj; };
 
 };
 #pragma pack (pop)

@@ -565,6 +565,36 @@ void a3DemoNetworking_recieve()
 		}
 		break;
 
+		case ID_PHYSICSOBJECT_CLIENT_UPDATE:
+		{
+			// Recieve event packet
+			PhysicsObjectDelivery* p = (PhysicsObjectDelivery*)rakClient.packet->data;
+
+			// add to physics manager 
+			physicsManager.CopyPhysicsCircleObjectArray(p->physObjects);
+			
+			// switch on network mode to determine sending 
+
+			//
+
+		}
+		break;
+
+		case ID_PHYSICSOBJECT_SERVER_UPDATE:
+		{
+			// Recieve event packet
+			PhysicsObjectDelivery* p = (PhysicsObjectDelivery*)rakClient.packet->data;
+
+			// update positions
+
+			// broadcast to all clients
+			// Send to all users
+			PhysicsObjectDelivery objectsDelivery(ID_PHYSICSOBJECT_CLIENT_UPDATE, *p->physObjects);
+			rakClient.peer->Send((const char*)&objectsDelivery, sizeof(objectsDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.thisUser.systemAddress, true);
+
+		}
+		break;
+
 		default:
 			sprintf(msgFormat, "Message with identifier %i has arrived", rakClient.packet->data[0]);
 			cChat.In(msgFormat);
@@ -916,6 +946,7 @@ void a3DemoNetworkingModeUpdate(a3_DemoState const* demostate)
 	// If Client
 	if (rakClient.thisUser.type == PLAYER)
 	{
+		
 		// Physics Update
 		if (physicsManager.numOfLocalObjs > 0)
 			// Update physics events
@@ -923,6 +954,13 @@ void a3DemoNetworkingModeUpdate(a3_DemoState const* demostate)
 
 		// Render Physics Object
 		a3DemoRenderPhysicsObjects(demostate);
+		
+		if (physicsManager.physicsCircleManager[0][0])
+		{
+			// Send physics objects
+			PhysicsObjectDelivery objectsDelivery(ID_PHYSICSOBJECT_SERVER_UPDATE, **physicsManager.physicsCircleManager[1]);
+			rakClient.peer->Send((const char*)&objectsDelivery, sizeof(objectsDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.hostSystemAddress, false);
+		}
 	}
 }
 
