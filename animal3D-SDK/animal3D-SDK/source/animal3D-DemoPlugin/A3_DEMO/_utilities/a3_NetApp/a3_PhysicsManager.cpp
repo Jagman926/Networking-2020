@@ -3,6 +3,13 @@
 #include <stdlib.h>
 #include <string>
 
+PhysicsCircleObject::PhysicsCircleObject()
+{
+	SetPosition(0.0f, 0.0f);
+	SetVelocity(0.0f, 0.0f);
+	radius = 0;
+}
+
 PhysicsCircleObject::PhysicsCircleObject(float x_pos, float y_pos, float x_vel, float y_vel, float rad)
 {
 	SetPosition(xPos, yPos);
@@ -33,11 +40,11 @@ void PhysicsCircleObject::CheckEdgeScreenCollision(float screenSize_x, float scr
 	*/
 
 	// Check horizontal edges
-	if ((xPos + radius) > screenSize_x || (xPos - radius) < 0) // (going off right || going off left)
+	if ((xPos + 2 * radius) > screenSize_x || (xPos - radius) < 0) // (going off right || going off left)
 		// flip velocity in x direction
 		SetVelocity(xVel * -1.0f, yVel);
 	// Check vertical edges
-	if ((yPos + radius) > screenSize_y || (yPos - radius) < 0) // (going off bottom || going off top)
+	if ((yPos + 2 * radius) > screenSize_y || (yPos - radius) < 0) // (going off bottom || going off top)
 		// flip velocity in y direction
 		SetVelocity(xVel, yVel * -1.0f);
 }
@@ -68,9 +75,11 @@ bool PhysicsManager::AddLocalCircleObject(PhysicsCircleObject obj)
 {
 	if (numOfLocalObjs < OBJ_MAX)
 	{
-		physicsCircleManager[0][numOfLocalObjs]->radius = obj.radius;
-		physicsCircleManager[0][numOfLocalObjs]->SetPosition(obj.xPos, obj.yPos);
-		physicsCircleManager[0][numOfLocalObjs]->SetVelocity(obj.xVel, obj.yVel);
+		PhysicsCircleObject * circleObj = new PhysicsCircleObject;
+		circleObj->radius = obj.radius;
+		circleObj->SetPosition(obj.xPos, obj.yPos);
+		circleObj->SetVelocity(obj.xVel, obj.yVel);
+		physicsCircleManager[0][numOfLocalObjs] = circleObj;
 		numOfLocalObjs++;
 		return true;
 	}
@@ -102,4 +111,17 @@ bool PhysicsManager::CopyPhysicsCircleObjectArray(int userIndex, PhysicsCircleOb
 		return true;
 	}
 	return false;
+}
+
+void PhysicsManager::UpdateObjects(float windowWidth, float windowHeight)
+{
+	for (int i = 0; i < PLYR_MAX; i++)
+		for (int j = 0; j < OBJ_MAX; j++)
+		{
+			if (physicsCircleManager[i][j])
+			{
+				physicsCircleManager[i][j]->CheckEdgeScreenCollision(windowWidth, windowHeight);
+				physicsCircleManager[i][j]->UpdatePosition();
+			}
+		}
 }

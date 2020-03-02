@@ -108,6 +108,7 @@ struct a3_DemoState
 // physics object manager ---------------------------------------------
 
 PhysicsManager physicsManager;
+const float circleRadius = 0.2f;
 
 // event manager for processing of all events ----------------------------
 
@@ -855,6 +856,21 @@ void a3DemoRenderTextChat(a3_DemoState const* demostate)
 	a3textDraw(demostate->text, -0.98f, -0.95f, -1.0f, 1, 1, 1, 1, cInput.buffer);
 }
 
+void a3DemoRenderPhysicsObjects(a3_DemoState const* demostate)
+{
+	for (int i = 0; i < PLYR_MAX; i++)
+		for (int j = 0; j < OBJ_MAX; j++)
+		{
+			if (physicsManager.physicsCircleManager[i][j])
+			{
+				PhysicsCircleObject* currObj = physicsManager.physicsCircleManager[i][j];
+				float screenX = (currObj->xPos * demostate->windowWidthInv * 2.0f) - 1.0f;
+				float screenY = (currObj->yPos * demostate->windowHeightInv * 2.0f) - 1.0f;
+				a3textDraw(demostate->text, screenX , -screenY, -1.00f, 0.0f, 1.0f, 0.0f, 1.0f, "%c", 'o');
+			}
+		}
+}
+
 void a3DemoRenderClient(a3_DemoState const* demoState)
 {
 	// clear color
@@ -862,6 +878,7 @@ void a3DemoRenderClient(a3_DemoState const* demoState)
 
 	// render chat
 	a3DemoRenderTextChat(demoState);
+	a3DemoRenderPhysicsObjects(demoState);
 
 }
 
@@ -906,6 +923,9 @@ void a3DemoUpdate(a3_DemoState const* demoState)
 		// Input parse and Send
 		a3DemoNetworking_send(cInput.lastInputBuffer);
 
+		if(physicsManager.numOfLocalObjs > 0)
+			// Update physics events
+			physicsManager.UpdateObjects((float)demoState->windowWidth, (float)demoState->windowHeight);
 	}
 
 	/*
@@ -1372,6 +1392,23 @@ A3DYLIBSYMBOL void a3demoCB_mouseClick(a3_DemoState *demoState, a3i32 button, a3
 	// persistent state update
 	a3mouseSetState(demoState->mouse, (a3_MouseButton)button, a3input_down);
 	a3mouseSetPosition(demoState->mouse, cursorX, cursorY);
+
+	if (a3mouseIsPressed(demoState->mouse, a3_MouseButton::a3mouse_left))
+	{
+		// cChat.In("Pressed");
+		// If connected to host / hosting
+		if (rakClient.connected)
+		{
+			// Init new physics object and capture current mouse position as starting position
+			PhysicsCircleObject object;
+			// set position and vel
+			object.SetPosition((float)cursorX, (float)cursorY);
+			object.SetVelocity(0.0f, 0.0f);
+			object.radius = circleRadius;
+			// Add object to physics manager
+			physicsManager.AddLocalCircleObject(object);
+		}
+	}
 }
 
 // mouse button is double-clicked
@@ -1388,6 +1425,19 @@ A3DYLIBSYMBOL void a3demoCB_mouseRelease(a3_DemoState *demoState, a3i32 button, 
 	// persistent state update
 	a3mouseSetState(demoState->mouse, (a3_MouseButton)button, a3input_up);
 	a3mouseSetPosition(demoState->mouse, cursorX, cursorY);
+
+	if (a3mouseIsReleased(demoState->mouse, a3_MouseButton::a3mouse_left))
+	{
+		// cChat.In("Released");
+		// If connected to host / hosting && an object exists in the last physics position
+		if (rakClient.connected && physicsManager.numOfLocalObjs > 0)
+		{
+			// Get last object in local physics list (Assume this is the object that was placed and not set yet)
+			PhysicsCircleObject * obj = physicsManager.physicsCircleManager[0][physicsManager.numOfLocalObjs - 1];
+			// Set object velocity based on distance between spawn point and mouse release point
+			obj->SetVelocity(obj->xPos - cursorX, obj->yPos - cursorY);
+		}
+	}
 }
 
 // mouse wheel is turned

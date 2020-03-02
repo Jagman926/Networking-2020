@@ -13,6 +13,7 @@ public:
 
 	// functions
 	//ctor
+	PhysicsCircleObject();
 	PhysicsCircleObject(float x_pos, float y_pos, float x_vel, float y_vel, float rad);
 	//update
 	void UpdatePosition();
@@ -46,6 +47,8 @@ public:
 	bool DeleteLastLocalCircleObject();
 	// copy circle physics object array to master
 	bool CopyPhysicsCircleObjectArray(int userIndex, PhysicsCircleObject objArray[OBJ_MAX]);
+	// Update objects
+	void UpdateObjects(float windowWidth, float windowHeight);
 };
 
 
