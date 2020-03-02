@@ -904,13 +904,26 @@ void a3DemoRenderClient(a3_DemoState const* demoState)
 
 	// render chat
 	a3DemoRenderTextChat(demoState);
-	a3DemoRenderPhysicsObjects(demoState);
-
 }
 
 void a3DemoRenderTextObject(a3_DemoState const* demostate)
 {
 	a3textDraw(demostate->text, eventManager.textObject.xPos, eventManager.textObject.yPos, -1.00f, eventManager.textObject.r, eventManager.textObject.g, eventManager.textObject.b, eventManager.textObject.a, "%s", eventManager.textObject.textBuffer);
+}
+
+void a3DemoNetworkingModeUpdate(a3_DemoState const* demostate)
+{
+	// If Client
+	if (rakClient.thisUser.type == PLAYER)
+	{
+		// Physics Update
+		if (physicsManager.numOfLocalObjs > 0)
+			// Update physics events
+			physicsManager.UpdateObjects((float)demostate->windowWidth, (float)demostate->windowHeight);
+
+		// Render Physics Object
+		a3DemoRenderPhysicsObjects(demostate);
+	}
 }
 
 void a3DemoUpdate(a3_DemoState const* demoState) 
@@ -948,10 +961,6 @@ void a3DemoUpdate(a3_DemoState const* demoState)
 
 		// Input parse and Send
 		a3DemoNetworking_send(cInput.lastInputBuffer);
-
-		if(physicsManager.numOfLocalObjs > 0)
-			// Update physics events
-			physicsManager.UpdateObjects((float)demoState->windowWidth, (float)demoState->windowHeight);
 	}
 
 	/*
@@ -967,6 +976,9 @@ void a3DemoUpdate(a3_DemoState const* demoState)
 	// Update text object
 	if(rakClient.connected)
 		a3DemoRenderTextObject(demoState);
+
+	// Networking Mode Update
+	a3DemoNetworkingModeUpdate(demoState);
 
 	// Clear last buffer input (the input that was entered this frame)
 	cInput.ClearLastBuffer();
@@ -1419,7 +1431,8 @@ A3DYLIBSYMBOL void a3demoCB_mouseClick(a3_DemoState *demoState, a3i32 button, a3
 	a3mouseSetState(demoState->mouse, (a3_MouseButton)button, a3input_down);
 	a3mouseSetPosition(demoState->mouse, cursorX, cursorY);
 
-	if (a3mouseIsPressed(demoState->mouse, a3_MouseButton::a3mouse_left))
+	// If player and left mouse button has been pressed
+	if (rakClient.thisUser.type == PLAYER && a3mouseIsPressed(demoState->mouse, a3_MouseButton::a3mouse_left))
 	{
 		// cChat.In("Pressed");
 		// If connected to host / hosting
@@ -1452,7 +1465,8 @@ A3DYLIBSYMBOL void a3demoCB_mouseRelease(a3_DemoState *demoState, a3i32 button, 
 	a3mouseSetState(demoState->mouse, (a3_MouseButton)button, a3input_up);
 	a3mouseSetPosition(demoState->mouse, cursorX, cursorY);
 
-	if (a3mouseIsReleased(demoState->mouse, a3_MouseButton::a3mouse_left))
+	// If player and left mouse button has been released
+	if (rakClient.thisUser.type == PLAYER && a3mouseIsReleased(demoState->mouse, a3_MouseButton::a3mouse_left))
 	{
 		// cChat.In("Released");
 		// If connected to host / hosting && an object exists in the last physics position
