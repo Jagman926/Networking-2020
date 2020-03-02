@@ -108,6 +108,7 @@ struct a3_DemoState
 // physics object manager ---------------------------------------------
 
 PhysicsManager physicsManager;
+const float circleRadius = 0.2f;
 
 // event manager for processing of all events ----------------------------
 
@@ -124,6 +125,7 @@ RakClient rakClient;
 char userNamePrompt[512];
 char userTypePrompt[512];
 char ipConnectPrompt[512];
+char networkingPrompt[512];
 
 
 void a3DemoNetworking_lobby_init()
@@ -135,6 +137,7 @@ void a3DemoNetworking_lobby_init()
 	strcpy(userNamePrompt, "Enter Username");
 	strcpy(userTypePrompt, "Would you like to Join (J) or Host (H) a chat room? (D) to Disconnect");
 	strcpy(ipConnectPrompt, "Enter server IP or (L) for 127.0.0.1");
+	strcpy(networkingPrompt, "Choose Netoworking Type: Data-Push (1) | Data-Share (2) | Data-Coupled (3)");
 
 	// Reset username and usertype (inputted from prompts in lobby)
 	memset(rakClient.thisUser.userName, 0, sizeof rakClient.thisUser.userName);
@@ -231,14 +234,38 @@ void a3DemoNetworking_init()
 			// Server initialization
 			if (rakClient.thisUser.type == SERVER)
 			{
-				// Clear chat
-				cChat.ClearChatBuffer();
-				// Notify starting server
-				cChat.In("Server Started!");
-				// Set connected
-				rakClient.connected = true;
-				// We need to let the server accept incoming connections from the clients
-				rakClient.peer->SetMaximumIncomingConnections(rakClient.maxClients);
+				// Networking mode
+				if (networkingPrompt[0] != 0)
+				{
+					cChat.In(networkingPrompt);
+					memset(networkingPrompt, 0, sizeof networkingPrompt);
+				}
+				else if (rakClient.networkMode == INVALID)
+				{
+					if (cInput.lastInputBuffer[0] == '1')
+					{
+						rakClient.networkMode = DATA_PUSH;
+					}
+					else if (cInput.lastInputBuffer[0] == '2')
+					{
+						rakClient.networkMode = DATA_SHARE;
+					}
+					else if (cInput.lastInputBuffer[0] == '3')
+					{
+						rakClient.networkMode = DATA_COUPLED;
+					}
+				}
+				else
+				{
+					// Clear chat
+					cChat.ClearChatBuffer();
+					// Notify starting server
+					cChat.In("Server Started!");
+					// Set connected
+					rakClient.connected = true;
+					// We need to let the server accept incoming connections from the clients
+					rakClient.peer->SetMaximumIncomingConnections(rakClient.maxClients);
+				}
 			}
 			// Player initialization
 			else
@@ -535,6 +562,36 @@ void a3DemoNetworking_recieve()
 			eventManager.textObject.SetPos(p->textObject.xPos, p->textObject.yPos);
 			
 			
+		}
+		break;
+
+		case ID_PHYSICSOBJECT_CLIENT_UPDATE:
+		{
+			// Recieve event packet
+			PhysicsObjectDelivery* p = (PhysicsObjectDelivery*)rakClient.packet->data;
+
+			// add to physics manager 
+			physicsManager.CopyPhysicsCircleObjectArray(p->physObjects);
+			
+			// switch on network mode to determine sending 
+
+			//
+
+		}
+		break;
+
+		case ID_PHYSICSOBJECT_SERVER_UPDATE:
+		{
+			// Recieve event packet
+			PhysicsObjectDelivery* p = (PhysicsObjectDelivery*)rakClient.packet->data;
+
+			// update positions
+
+			// broadcast to all clients
+			// Send to all users
+			PhysicsObjectDelivery objectsDelivery(ID_PHYSICSOBJECT_CLIENT_UPDATE, p->physObjects);
+			rakClient.peer->Send((const char*)&objectsDelivery, sizeof(objectsDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.thisUser.systemAddress, true);
+
 		}
 		break;
 
@@ -855,6 +912,24 @@ void a3DemoRenderTextChat(a3_DemoState const* demostate)
 	a3textDraw(demostate->text, -0.98f, -0.95f, -1.0f, 1, 1, 1, 1, cInput.buffer);
 }
 
+void a3DemoRenderPhysicsObjects(a3_DemoState const* demostate)
+{
+	for (int i = 0; i < PLYR_MAX; i++)
+		for (int j = 0; j < OBJ_MAX; j++)
+		{
+			if (physicsManager.physicsCircleManager[i][j] && physicsManager.physicsCircleManager[i][j]->radius != 0)
+			{
+				PhysicsCircleObject* currObj = physicsManager.physicsCircleManager[i][j];
+				float screenX = (currObj->xPos * demostate->windowWidthInv * 2.0f) - 1.0f;
+				float screenY = (currObj->yPos * demostate->windowHeightInv * 2.0f) - 1.0f;
+				if (i == 0)
+					a3textDraw(demostate->text, screenX , -screenY, -1.00f, 0.0f, 1.0f, 0.0f, 1.0f, "%c", 'o');
+				else if (i == 1)
+					a3textDraw(demostate->text, screenX, -screenY, -1.00f, 1.0f, 0.0f, 0.0f, 1.0f, "%c", 'o');
+			}
+		}
+}
+
 void a3DemoRenderClient(a3_DemoState const* demoState)
 {
 	// clear color
@@ -862,12 +937,38 @@ void a3DemoRenderClient(a3_DemoState const* demoState)
 
 	// render chat
 	a3DemoRenderTextChat(demoState);
-
 }
 
 void a3DemoRenderTextObject(a3_DemoState const* demostate)
 {
 	a3textDraw(demostate->text, eventManager.textObject.xPos, eventManager.textObject.yPos, -1.00f, eventManager.textObject.r, eventManager.textObject.g, eventManager.textObject.b, eventManager.textObject.a, "%s", eventManager.textObject.textBuffer);
+}
+
+void a3DemoNetworkingModeUpdate(a3_DemoState const* demostate)
+{
+	// If Client
+	if (rakClient.thisUser.type == PLAYER)
+	{
+		
+		// Physics Update
+		if (physicsManager.numOfLocalObjs > 0)
+			// Update physics events
+			physicsManager.UpdateObjects((float)demostate->windowWidth, (float)demostate->windowHeight);
+
+		// Render Physics Object
+		a3DemoRenderPhysicsObjects(demostate);
+		
+		if (physicsManager.physicsCircleManager[0][0])
+		{
+			// Send physics objects
+			PhysicsObjectDelivery objectsDelivery(ID_PHYSICSOBJECT_SERVER_UPDATE, *physicsManager.physicsCircleManager[0]);
+			rakClient.peer->Send((const char*)&objectsDelivery, sizeof(objectsDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.hostSystemAddress, false);
+
+			// Clear array every frame
+			physicsManager.ClearAllRemoteArrays();
+		}
+		
+	}
 }
 
 void a3DemoUpdate(a3_DemoState const* demoState) 
@@ -905,7 +1006,6 @@ void a3DemoUpdate(a3_DemoState const* demoState)
 
 		// Input parse and Send
 		a3DemoNetworking_send(cInput.lastInputBuffer);
-
 	}
 
 	/*
@@ -921,6 +1021,9 @@ void a3DemoUpdate(a3_DemoState const* demoState)
 	// Update text object
 	if(rakClient.connected)
 		a3DemoRenderTextObject(demoState);
+
+	// Networking Mode Update
+	a3DemoNetworkingModeUpdate(demoState);
 
 	// Clear last buffer input (the input that was entered this frame)
 	cInput.ClearLastBuffer();
@@ -1072,6 +1175,8 @@ A3DYLIBSYMBOL a3_DemoState *a3demoCB_load(a3_DemoState *demoState, a3boolean hot
 				if (rakClient.peer)
 				{
 					a3DemoNetworking_lobby_init();
+					physicsManager.InitAllLocalsToZero();
+
 				}
 			}
 
@@ -1372,6 +1477,24 @@ A3DYLIBSYMBOL void a3demoCB_mouseClick(a3_DemoState *demoState, a3i32 button, a3
 	// persistent state update
 	a3mouseSetState(demoState->mouse, (a3_MouseButton)button, a3input_down);
 	a3mouseSetPosition(demoState->mouse, cursorX, cursorY);
+
+	// If player and left mouse button has been pressed
+	if (rakClient.thisUser.type == PLAYER && a3mouseIsPressed(demoState->mouse, a3_MouseButton::a3mouse_left))
+	{
+		// cChat.In("Pressed");
+		// If connected to host / hosting
+		if (rakClient.connected)
+		{
+			// Init new physics object and capture current mouse position as starting position
+			PhysicsCircleObject object;
+			// set position and vel
+			object.SetPosition((float)cursorX, (float)cursorY);
+			object.SetVelocity(0.0f, 0.0f);
+			object.radius = circleRadius;
+			// Add object to physics manager
+			physicsManager.AddLocalCircleObject(object);
+		}
+	}
 }
 
 // mouse button is double-clicked
@@ -1388,6 +1511,20 @@ A3DYLIBSYMBOL void a3demoCB_mouseRelease(a3_DemoState *demoState, a3i32 button, 
 	// persistent state update
 	a3mouseSetState(demoState->mouse, (a3_MouseButton)button, a3input_up);
 	a3mouseSetPosition(demoState->mouse, cursorX, cursorY);
+
+	// If player and left mouse button has been released
+	if (rakClient.thisUser.type == PLAYER && a3mouseIsReleased(demoState->mouse, a3_MouseButton::a3mouse_left))
+	{
+		// cChat.In("Released");
+		// If connected to host / hosting && an object exists in the last physics position
+		if (rakClient.connected && physicsManager.numOfLocalObjs > 0)
+		{
+			// Get last object in local physics list (Assume this is the object that was placed and not set yet)
+			PhysicsCircleObject * obj = physicsManager.physicsCircleManager[0][physicsManager.numOfLocalObjs - 1];
+			// Set object velocity based on distance between spawn point and mouse release point
+			obj->SetVelocity((obj->xPos - cursorX) * 0.1f, (obj->yPos - cursorY) * 0.1f);
+		}
+	}
 }
 
 // mouse wheel is turned
