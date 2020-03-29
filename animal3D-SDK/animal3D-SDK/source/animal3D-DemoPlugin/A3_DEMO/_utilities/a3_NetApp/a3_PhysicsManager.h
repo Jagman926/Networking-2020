@@ -46,12 +46,15 @@ public:
 	PhysicsManager();
 	// init
 	void InitAllLocalsToZero();
+	void InitAllToZero();
 	// add
 	bool AddLocalCircleObject(PhysicsCircleObject obj);
 	// delete last
 	bool DeleteLastLocalCircleObject();
-	// delete remotes
+	// clear remotes
 	bool ClearAllRemoteArrays();
+	// clear all arrays
+	bool ClearAllArrays();
 	// copy circle physics object array to master
 	bool CopyPhysicsCircleObjectArray(PhysicsCircleObject objArray[OBJ_MAX]);
 	// Update objects

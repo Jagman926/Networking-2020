@@ -89,6 +89,24 @@ void PhysicsManager::InitAllLocalsToZero()
 	}
 }
 
+void PhysicsManager::InitAllToZero()
+{
+	numOfLocalObjs = 0;
+	numRemoteArrays = 0;
+	int i, j;
+	for (i = 0; i < PLYR_MAX; i++)
+	{
+		for (j = 0; j < OBJ_MAX; j++)
+		{
+			PhysicsCircleObject* circleObj = new PhysicsCircleObject;
+			circleObj->radius = 0;
+			circleObj->SetPosition(0, 0);
+			circleObj->SetVelocity(0, 0);
+			physicsCircleManager[i][j] = circleObj;
+		}
+	}
+}
+
 bool PhysicsManager::AddLocalCircleObject(PhysicsCircleObject obj)
 {
 	if (numOfLocalObjs < OBJ_MAX)
@@ -136,6 +154,27 @@ bool PhysicsManager::ClearAllRemoteArrays()
 	return false;
 }
 
+bool PhysicsManager::ClearAllArrays()
+{
+	for (int i = 0; i < PLYR_MAX; i++)
+	{
+		for (int j = 0; j < OBJ_MAX; j++)
+		{
+			if (physicsCircleManager[i][j])
+			{
+				physicsCircleManager[i][j]->radius = 0;
+				physicsCircleManager[i][j]->SetPosition(0, 0);
+				physicsCircleManager[i][j]->SetVelocity(0, 0);
+
+			}
+		}
+		// all arrays cleared
+		numRemoteArrays = 0;
+		return true;
+	}
+	return false;
+}
+
 bool PhysicsManager::CopyPhysicsCircleObjectArray(PhysicsCircleObject objArray[OBJ_MAX])
 {
 	if (numRemoteArrays < PLYR_MAX)
@@ -148,16 +187,11 @@ bool PhysicsManager::CopyPhysicsCircleObjectArray(PhysicsCircleObject objArray[O
 			// check if radius isnt 0
 			if (objArray[i].radius != 0)
 			{
-				PhysicsCircleObject* circleObj = new PhysicsCircleObject;
-				circleObj->radius = objArray[i].radius;
-				circleObj->SetPosition(objArray[i].xPos, objArray[i].yPos);
-				circleObj->SetVelocity(objArray[i].xVel, objArray[i].yVel);
-
-				physicsCircleManager[numRemoteArrays][i] = circleObj;
-
+				physicsCircleManager[numRemoteArrays][i]->radius = objArray[i].radius;
+				physicsCircleManager[numRemoteArrays][i]->SetPosition(objArray[i].xPos, objArray[i].yPos);
+				physicsCircleManager[numRemoteArrays][i]->SetVelocity(objArray[i].xVel, objArray[i].yVel);
 			}
 		}
-
 		return true;
 	}
 	return false;

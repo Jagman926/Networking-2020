@@ -590,7 +590,7 @@ void a3DemoNetworking_recieve()
 			// broadcast to all clients
 			// Send to all users
 			PhysicsObjectDelivery objectsDelivery(ID_PHYSICSOBJECT_CLIENT_UPDATE, p->physObjects);
-			rakClient.peer->Send((const char*)&objectsDelivery, sizeof(objectsDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.thisUser.systemAddress, true);
+			rakClient.peer->Send((const char*)&objectsDelivery, sizeof(objectsDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.packet->systemAddress, true);
 
 		}
 		break;
@@ -914,20 +914,30 @@ void a3DemoRenderTextChat(a3_DemoState const* demostate)
 
 void a3DemoRenderPhysicsObjects(a3_DemoState const* demostate)
 {
-	for (int i = 0; i < PLYR_MAX; i++)
-		for (int j = 0; j < OBJ_MAX; j++)
+	int i, j;
+	for (i = 0; i < PLYR_MAX; i++)
+	{
+		for (j = 0; j < OBJ_MAX; j++)
 		{
-			if (physicsManager.physicsCircleManager[i][j] && physicsManager.physicsCircleManager[i][j]->radius != 0)
+			if (physicsManager.physicsCircleManager[i][j]->radius != 0)
 			{
-				PhysicsCircleObject* currObj = physicsManager.physicsCircleManager[i][j];
-				float screenX = (currObj->xPos * demostate->windowWidthInv * 2.0f) - 1.0f;
-				float screenY = (currObj->yPos * demostate->windowHeightInv * 2.0f) - 1.0f;
+				// Get object position
+				float screenX = (physicsManager.physicsCircleManager[i][j]->xPos * demostate->windowWidthInv * 2.0f) - 1.0f;
+				float screenY = (physicsManager.physicsCircleManager[i][j]->yPos * demostate->windowHeightInv * 2.0f) - 1.0f;
+				// Update onto screen based on remote
 				if (i == 0)
-					a3textDraw(demostate->text, screenX , -screenY, -1.00f, 0.0f, 1.0f, 0.0f, 1.0f, "%c", 'o');
+					a3textDraw(demostate->text, screenX, -screenY, -1.00f, 0.0f, 1.0f, 0.0f, 1.0f, "%c", 'o');
 				else if (i == 1)
 					a3textDraw(demostate->text, screenX, -screenY, -1.00f, 1.0f, 0.0f, 0.0f, 1.0f, "%c", 'o');
+				else if (i == 2)
+					a3textDraw(demostate->text, screenX, -screenY, -1.00f, 0.0f, 0.0f, 1.0f, 1.0f, "%c", 'o');
+				else if (i == 3)
+					a3textDraw(demostate->text, screenX, -screenY, -1.00f, 1.0f, 0.0f, 1.0f, 1.0f, "%c", 'o');
+				else if (i == 4)
+					a3textDraw(demostate->text, screenX, -screenY, -1.00f, 1.0f, 1.0f, 0.0f, 1.0f, "%c", 'o');
 			}
 		}
+	}
 }
 
 void a3DemoRenderClient(a3_DemoState const* demoState)
@@ -1175,8 +1185,7 @@ A3DYLIBSYMBOL a3_DemoState *a3demoCB_load(a3_DemoState *demoState, a3boolean hot
 				if (rakClient.peer)
 				{
 					a3DemoNetworking_lobby_init();
-					physicsManager.InitAllLocalsToZero();
-
+					physicsManager.InitAllToZero();
 				}
 			}
 
