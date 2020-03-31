@@ -308,6 +308,7 @@ void a3DemoNetworking_init()
 
 void a3DemoNetworking_recieve()
 {
+	
 	// For loop for reading packet information
 	for (rakClient.packet = rakClient.peer->Receive(); rakClient.packet; rakClient.peer->DeallocatePacket(rakClient.packet), rakClient.packet = rakClient.peer->Receive())
 	{
@@ -564,33 +565,33 @@ void a3DemoNetworking_recieve()
 			
 		}
 		break;
-
+	
 		case ID_PHYSICSOBJECT_CLIENT_UPDATE:
 		{
+			
 			// Recieve event packet
 			PhysicsObjectDelivery* p = (PhysicsObjectDelivery*)rakClient.packet->data;
-
 			// add to physics manager 
 			physicsManager.CopyPhysicsCircleObjectArray(p->physObjects);
 			
-			// switch on network mode to determine sending 
-
-			//
-
 		}
 		break;
 
 		case ID_PHYSICSOBJECT_SERVER_UPDATE:
 		{
+			
 			// Recieve event packet
 			PhysicsObjectDelivery* p = (PhysicsObjectDelivery*)rakClient.packet->data;
+
+			// add to physics manager 
+			physicsManager.CopyPhysicsCircleObjectArray(p->physObjects);
 
 			// update positions
 
 			// broadcast to all clients
 			// Send to all users
-			PhysicsObjectDelivery objectsDelivery(ID_PHYSICSOBJECT_CLIENT_UPDATE, p->physObjects);
-			rakClient.peer->Send((const char*)&objectsDelivery, sizeof(objectsDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.packet->systemAddress, true);
+			//PhysicsObjectDelivery objectsDelivery(ID_PHYSICSOBJECT_CLIENT_UPDATE, p->physObjects);
+			//rakClient.peer->Send((const char*)&objectsDelivery, sizeof(objectsDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.hostSystemAddress, true);
 
 		}
 		break;
@@ -925,15 +926,15 @@ void a3DemoRenderPhysicsObjects(a3_DemoState const* demostate)
 				float screenX = (physicsManager.physicsCircleManager[i][j]->xPos * demostate->windowWidthInv * 2.0f) - 1.0f;
 				float screenY = (physicsManager.physicsCircleManager[i][j]->yPos * demostate->windowHeightInv * 2.0f) - 1.0f;
 				// Update onto screen based on remote
-				if (i == 0)
+				if (i == 0) // local - green
 					a3textDraw(demostate->text, screenX, -screenY, -1.00f, 0.0f, 1.0f, 0.0f, 1.0f, "%c", 'o');
-				else if (i == 1)
+				else if (i == 1) // client - red
 					a3textDraw(demostate->text, screenX, -screenY, -1.00f, 1.0f, 0.0f, 0.0f, 1.0f, "%c", 'o');
-				else if (i == 2)
+				else if (i == 2) // 3rd instance - blue
 					a3textDraw(demostate->text, screenX, -screenY, -1.00f, 0.0f, 0.0f, 1.0f, 1.0f, "%c", 'o');
-				else if (i == 3)
+				else if (i == 3) // 4th instance - purple/magenta w/e
 					a3textDraw(demostate->text, screenX, -screenY, -1.00f, 1.0f, 0.0f, 1.0f, 1.0f, "%c", 'o');
-				else if (i == 4)
+				else if (i == 4) // 5th instance - red/green
 					a3textDraw(demostate->text, screenX, -screenY, -1.00f, 1.0f, 1.0f, 0.0f, 1.0f, "%c", 'o');
 			}
 		}
@@ -962,8 +963,11 @@ void a3DemoNetworkingModeUpdate(a3_DemoState const* demostate)
 		
 		// Physics Update
 		if (physicsManager.numOfLocalObjs > 0)
+		{
 			// Update physics events
 			physicsManager.UpdateObjects((float)demostate->windowWidth, (float)demostate->windowHeight);
+			
+		}
 
 		// Render Physics Object
 		a3DemoRenderPhysicsObjects(demostate);
@@ -977,7 +981,17 @@ void a3DemoNetworkingModeUpdate(a3_DemoState const* demostate)
 			// Clear array every frame
 			physicsManager.ClearAllRemoteArrays();
 		}
-		
+	}
+	else if (rakClient.thisUser.type == SERVER)
+	{
+		for (int i = 0; i < PLYR_MAX; i++)
+		{
+			if (physicsManager.physicsCircleManager[i][0]->radius > 0.0f)
+			{
+				PhysicsObjectDelivery objectsDelivery(ID_PHYSICSOBJECT_CLIENT_UPDATE, *physicsManager.physicsCircleManager[i]);
+				rakClient.peer->Send((const char*)&objectsDelivery, sizeof(objectsDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.thisUser.systemAddress, true);
+			}
+		}
 	}
 }
 

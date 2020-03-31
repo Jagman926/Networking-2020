@@ -191,6 +191,8 @@ bool PhysicsManager::CopyPhysicsCircleObjectArray(PhysicsCircleObject objArray[O
 				physicsCircleManager[numRemoteArrays][i]->SetPosition(objArray[i].xPos, objArray[i].yPos);
 				physicsCircleManager[numRemoteArrays][i]->SetVelocity(objArray[i].xVel, objArray[i].yVel);
 			}
+			else
+				return true;
 		}
 		return true;
 	}
