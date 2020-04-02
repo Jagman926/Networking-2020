@@ -211,10 +211,8 @@ bool PhysicsManager::CopyPhysicsCircleObjectArray(PhysicsCircleObject objArray[O
 	return false;
 }
 
-bool PhysicsManager::CheckPhysicsCircleObjectArray(PhysicsCircleObject objArray[OBJ_MAX], char sysAddress[512])
+bool PhysicsManager::CheckPhysicsCircleObjectArray(PhysicsCircleObject objArray[OBJ_MAX],  int index)
 {
-	int addrIndex = GetIndexFromSystemAddress(sysAddress);
-
 
 	// increment arrays on the remote end
 	numRemoteArrays += 1;
@@ -222,25 +220,24 @@ bool PhysicsManager::CheckPhysicsCircleObjectArray(PhysicsCircleObject objArray[
 	for (i = 0; i < OBJ_MAX; i++)
 	{
 
-		physicsCircleManager[addrIndex][i]->radius = objArray[i].radius;
-		physicsCircleManager[addrIndex][i]->SetPosition(objArray[i].xPos, objArray[i].yPos);
-		physicsCircleManager[addrIndex][i]->SetVelocity(objArray[i].xVel, objArray[i].yVel);
-		physicsCircleManager[addrIndex][i]->SetAcceleration(objArray[i].xAcc, objArray[i].yAcc);
+		physicsCircleManager[index][i]->radius = objArray[i].radius;
+		physicsCircleManager[index][i]->SetPosition(objArray[i].xPos, objArray[i].yPos);
+		physicsCircleManager[index][i]->SetVelocity(objArray[i].xVel, objArray[i].yVel);
+		physicsCircleManager[index][i]->SetAcceleration(objArray[i].xAcc, objArray[i].yAcc);
 	}
 	
 	return true;
 }
 
-void PhysicsManager::UpdateObjects(float windowWidth, float windowHeight, float dt)
+void PhysicsManager::UpdateObjects(int index, float windowWidth, float windowHeight, float dt)
 {
-	int i = 0;
-	//for (int i = 0; i <= numRemoteArrays; i++)
+	
 	for (int j = 0; j < OBJ_MAX; j++)
 	{
-		if (physicsCircleManager[i][j])
+		if (physicsCircleManager[index][j])
 		{
-			physicsCircleManager[i][j]->CheckEdgeScreenCollision(windowWidth, windowHeight);
-			physicsCircleManager[i][j]->UpdatePosition(dt);
+			physicsCircleManager[index][j]->CheckEdgeScreenCollision(windowWidth, windowHeight);
+			physicsCircleManager[index][j]->UpdatePosition(dt);
 		}
 	}
 }
@@ -255,6 +252,11 @@ int PhysicsManager::GetIndexFromSystemAddress(char sysAddres[512])
 		}
 	}
 	return -1;
+}
+
+void PhysicsManager::SetSytemAddressBool(bool recieved, int index)
+{
+	systemAddressUpdated[index] = recieved;
 }
 
 void PhysicsManager::ResetSytemAddressBools()

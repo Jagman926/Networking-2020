@@ -583,6 +583,21 @@ void a3DemoNetworking_recieve()
 			// Recieve event packet
 			PhysicsObjectDelivery* p = (PhysicsObjectDelivery*)rakClient.packet->data;
 
+			int systemAddressIndex = physicsManager.GetIndexFromSystemAddress(p->systemAddress);
+
+			// hasn't been added
+			if (systemAddressIndex == -1)
+			{
+				// add to physics manager 
+				physicsManager.CopyPhysicsCircleObjectArray(p->physObjects, p->systemAddress);
+				
+			}
+			else
+			{
+				physicsManager.SetSytemAddressBool(true, systemAddressIndex);
+				physicsManager.CheckPhysicsCircleObjectArray(p->physObjects, systemAddressIndex);
+			}
+			
 			// add to physics manager 
 			physicsManager.CopyPhysicsCircleObjectArray(p->physObjects, p->systemAddress);
 
@@ -965,7 +980,7 @@ void a3DemoNetworkingModeUpdate(a3_DemoState const* demostate)
 		if (physicsManager.numOfLocalObjs > 0)
 		{
 			// Update physics events
-			physicsManager.UpdateObjects((float)demostate->windowWidth, (float)demostate->windowHeight, (float)demostate->renderTimer->secondsPerTick);
+			physicsManager.UpdateObjects(0, (float)demostate->windowWidth, (float)demostate->windowHeight, (float)demostate->renderTimer->secondsPerTick);
 			
 		}
 
@@ -986,15 +1001,26 @@ void a3DemoNetworkingModeUpdate(a3_DemoState const* demostate)
 	{
 		for (int i = 1; i < rakClient.currentUsers - 1; i++)
 		{
+			// object exists
+			if (physicsManager.physicsCircleManager[i][0]->radius > 0)
+			{
+				// Was not updated this frame
+				if (!physicsManager.systemAddressUpdated[i])
+				{
+					// update it
+					physicsManager.UpdateObjects(i, (float)demostate->windowWidth, (float)demostate->windowHeight, (float)demostate->renderTimer->secondsPerTick);
+
+				}
+			}
 			PhysicsObjectDelivery objectsDelivery(ID_PHYSICSOBJECT_CLIENT_UPDATE, rakClient.thisUser.systemAddress,  *physicsManager.physicsCircleManager[i]);
 			rakClient.peer->Send((const char*)& objectsDelivery, sizeof(objectsDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.thisUser.systemAddress, true);
 		}
-
 		// Render Physics Object
-		//a3DemoRenderPhysicsObjects(demostate);
+		a3DemoRenderPhysicsObjects(demostate);
 
 		// Clear array every frame
-		physicsManager.ClearAllRemoteArrays();
+		//physicsManager.ClearAllRemoteArrays();
+		physicsManager.ResetSytemAddressBools();
 	}
 }
 

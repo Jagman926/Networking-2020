@@ -66,11 +66,14 @@ public:
 	// copy circle physics object array to master
 	bool CopyPhysicsCircleObjectArray(PhysicsCircleObject objArray[OBJ_MAX], char sysAddress[512]);
 	// Update objects
-	void UpdateObjects(float windowWidth, float windowHeight, float dt);
+	void UpdateObjects(int index, float windowWidth, float windowHeight, float dt);
 
 	int GetIndexFromSystemAddress(char sysAddres[512]);
+	void SetSytemAddressBool(bool recieved, int index);
+	
 	void ResetSytemAddressBools();
-	bool PhysicsManager::CheckPhysicsCircleObjectArray(PhysicsCircleObject objArray[OBJ_MAX], char sysAddress[512]);
+	bool PhysicsManager::CheckPhysicsCircleObjectArray(PhysicsCircleObject objArray[OBJ_MAX],  int index);
+	
 };
 
 
