@@ -11,16 +11,17 @@ PhysicsCircleObject::PhysicsCircleObject()
 
 }
 
-PhysicsCircleObject::PhysicsCircleObject(float x_pos, float y_pos, float x_vel, float y_vel, float rad)
+PhysicsCircleObject::PhysicsCircleObject(float x_pos, float y_pos, float x_vel, float y_vel, float x_acc, float y_acc, float rad)
 {
 	SetPosition(xPos, yPos);
 	SetVelocity(xVel, yVel);
+	SetAcceleration(xAcc, yAcc);
 	radius = rad;
 }
 
-void PhysicsCircleObject::UpdatePosition()
+void PhysicsCircleObject::UpdatePosition(float dt)
 {
-	SetPosition(xPos + xVel, yPos + yVel);
+	SetPosition(xPos + xVel * dt, yPos + yVel * dt);
 }
 
 void PhysicsCircleObject::CheckEdgeScreenCollision(float screenSize_x, float screenSize_y)
@@ -111,7 +112,7 @@ bool PhysicsManager::AddLocalCircleObject(PhysicsCircleObject obj)
 {
 	if (numOfLocalObjs < OBJ_MAX)
 	{
-		PhysicsCircleObject * circleObj = new PhysicsCircleObject;
+		PhysicsCircleObject *circleObj = new PhysicsCircleObject;
 		circleObj->radius = obj.radius;
 		circleObj->SetPosition(obj.xPos, obj.yPos);
 		circleObj->SetVelocity(obj.xVel, obj.yVel);
@@ -144,14 +145,13 @@ bool PhysicsManager::ClearAllRemoteArrays()
 				physicsCircleManager[i][j]->radius = 0;
 				physicsCircleManager[i][j]->SetPosition(0, 0);
 				physicsCircleManager[i][j]->SetVelocity(0, 0);
-
+				physicsCircleManager[i][j]->SetAcceleration(0, 0);
 			}
 		}
-		// no more remote arrays
-		numRemoteArrays = 0;
-		return true;
 	}
-	return false;
+	// no more remote arrays
+	numRemoteArrays = 0;
+	return true;
 }
 
 bool PhysicsManager::ClearAllArrays()
@@ -165,14 +165,13 @@ bool PhysicsManager::ClearAllArrays()
 				physicsCircleManager[i][j]->radius = 0;
 				physicsCircleManager[i][j]->SetPosition(0, 0);
 				physicsCircleManager[i][j]->SetVelocity(0, 0);
-
+				physicsCircleManager[i][j]->SetAcceleration(0, 0);
 			}
 		}
-		// all arrays cleared
-		numRemoteArrays = 0;
-		return true;
 	}
-	return false;
+	// all arrays cleared
+	numRemoteArrays = 0;
+	return true;
 }
 
 bool PhysicsManager::CopyPhysicsCircleObjectArray(PhysicsCircleObject objArray[OBJ_MAX])
@@ -180,7 +179,7 @@ bool PhysicsManager::CopyPhysicsCircleObjectArray(PhysicsCircleObject objArray[O
 	if (numRemoteArrays < PLYR_MAX)
 	{
 		// increment arrays on the remote end
-		numRemoteArrays++;
+		numRemoteArrays += 1;
 		int i;
 		for (i = 0; i < OBJ_MAX; i++)
 		{
@@ -190,25 +189,28 @@ bool PhysicsManager::CopyPhysicsCircleObjectArray(PhysicsCircleObject objArray[O
 				physicsCircleManager[numRemoteArrays][i]->radius = objArray[i].radius;
 				physicsCircleManager[numRemoteArrays][i]->SetPosition(objArray[i].xPos, objArray[i].yPos);
 				physicsCircleManager[numRemoteArrays][i]->SetVelocity(objArray[i].xVel, objArray[i].yVel);
+				physicsCircleManager[numRemoteArrays][i]->SetAcceleration(objArray[i].xAcc, objArray[i].yAcc);
 			}
 			else
+			{
 				return true;
+			}
 		}
 		return true;
 	}
 	return false;
 }
 
-void PhysicsManager::UpdateObjects(float windowWidth, float windowHeight)
+void PhysicsManager::UpdateObjects(float windowWidth, float windowHeight, float dt)
 {
 	int i = 0;
 	//for (int i = 0; i <= numRemoteArrays; i++)
-		for (int j = 0; j < OBJ_MAX; j++)
+	for (int j = 0; j < OBJ_MAX; j++)
+	{
+		if (physicsCircleManager[i][j])
 		{
-			if (physicsCircleManager[i][j])
-			{
-				physicsCircleManager[i][j]->CheckEdgeScreenCollision(windowWidth, windowHeight);
-				physicsCircleManager[i][j]->UpdatePosition();
-			}
+			physicsCircleManager[i][j]->CheckEdgeScreenCollision(windowWidth, windowHeight);
+			physicsCircleManager[i][j]->UpdatePosition(dt);
 		}
+	}
 }

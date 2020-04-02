@@ -8,15 +8,17 @@ public:
 	float xPos = 0.0f, yPos = 0.0f;
 	// current velocity of object in 2D space
 	float xVel = 0.0f, yVel = 0.0f;
+	// current acceleration of objects in 2D space
+	float xAcc = 0.0f, yAcc = 0.0f;
 	// object radius
 	float radius = 0.0f;
 
 	// functions
 	//ctor
 	PhysicsCircleObject();
-	PhysicsCircleObject(float x_pos, float y_pos, float x_vel, float y_vel, float rad);
+	PhysicsCircleObject(float x_pos, float y_pos, float x_vel, float y_vel, float x_acc, float y_acc, float rad);
 	//update
-	void UpdatePosition();
+	void UpdatePosition(float dt);
 	// collision checks
 	void CheckEdgeScreenCollision(float screenSize_x, float screenSize_y);
 	void CheckPhysicsObjectCollision(PhysicsCircleObject physicsObjs);
@@ -24,6 +26,7 @@ public:
 	// sets
 	void SetPosition(float x, float y) { xPos = x, yPos = y; };
 	void SetVelocity(float x, float y) { xVel = x, yVel = y; };
+	void SetAcceleration(float x, float y) { xAcc = x, yAcc = y; };
 };
 
 // Const
@@ -58,7 +61,7 @@ public:
 	// copy circle physics object array to master
 	bool CopyPhysicsCircleObjectArray(PhysicsCircleObject objArray[OBJ_MAX]);
 	// Update objects
-	void UpdateObjects(float windowWidth, float windowHeight);
+	void UpdateObjects(float windowWidth, float windowHeight, float dt);
 };
 
 

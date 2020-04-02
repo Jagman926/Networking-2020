@@ -965,7 +965,7 @@ void a3DemoNetworkingModeUpdate(a3_DemoState const* demostate)
 		if (physicsManager.numOfLocalObjs > 0)
 		{
 			// Update physics events
-			physicsManager.UpdateObjects((float)demostate->windowWidth, (float)demostate->windowHeight);
+			physicsManager.UpdateObjects((float)demostate->windowWidth, (float)demostate->windowHeight, (float)demostate->renderTimer->secondsPerTick);
 			
 		}
 
@@ -984,14 +984,17 @@ void a3DemoNetworkingModeUpdate(a3_DemoState const* demostate)
 	}
 	else if (rakClient.thisUser.type == SERVER)
 	{
-		for (int i = 0; i < PLYR_MAX; i++)
+		for (int i = 1; i < rakClient.currentUsers - 1; i++)
 		{
-			if (physicsManager.physicsCircleManager[i][0]->radius > 0.0f)
-			{
-				PhysicsObjectDelivery objectsDelivery(ID_PHYSICSOBJECT_CLIENT_UPDATE, *physicsManager.physicsCircleManager[i]);
-				rakClient.peer->Send((const char*)&objectsDelivery, sizeof(objectsDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.thisUser.systemAddress, true);
-			}
+			PhysicsObjectDelivery objectsDelivery(ID_PHYSICSOBJECT_CLIENT_UPDATE, *physicsManager.physicsCircleManager[i]);
+			rakClient.peer->Send((const char*)& objectsDelivery, sizeof(objectsDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.thisUser.systemAddress, true);
 		}
+
+		// Render Physics Object
+		//a3DemoRenderPhysicsObjects(demostate);
+
+		// Clear array every frame
+		physicsManager.ClearAllRemoteArrays();
 	}
 }
 
@@ -1513,6 +1516,7 @@ A3DYLIBSYMBOL void a3demoCB_mouseClick(a3_DemoState *demoState, a3i32 button, a3
 			// set position and vel
 			object.SetPosition((float)cursorX, (float)cursorY);
 			object.SetVelocity(0.0f, 0.0f);
+			object.SetAcceleration(0.0f, 0.0f);
 			object.radius = circleRadius;
 			// Add object to physics manager
 			physicsManager.AddLocalCircleObject(object);
@@ -1545,7 +1549,7 @@ A3DYLIBSYMBOL void a3demoCB_mouseRelease(a3_DemoState *demoState, a3i32 button, 
 			// Get last object in local physics list (Assume this is the object that was placed and not set yet)
 			PhysicsCircleObject * obj = physicsManager.physicsCircleManager[0][physicsManager.numOfLocalObjs - 1];
 			// Set object velocity based on distance between spawn point and mouse release point
-			obj->SetVelocity((obj->xPos - cursorX) * 0.1f, (obj->yPos - cursorY) * 0.1f);
+			obj->SetVelocity((obj->xPos - cursorX) * 0.5f, (obj->yPos - cursorY) * 0.5f);
 		}
 	}
 }
