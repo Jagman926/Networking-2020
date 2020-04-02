@@ -187,10 +187,14 @@ struct PhysicsObjectDelivery
 public:
 	// leading byte
 	RakNet::MessageID msgID;
+
+	// system address
+	char systemAddress[512];
+
 	// object for text
 	PhysicsCircleObject physObjects[OBJ_MAX];
 	// Functions
-	PhysicsObjectDelivery(RakNet::MessageID ID, PhysicsCircleObject obj[OBJ_MAX]) { msgID = ID, *physObjects = *obj; };
+	PhysicsObjectDelivery(RakNet::MessageID ID, char sysAddrs[512], PhysicsCircleObject obj[OBJ_MAX]) { msgID = ID, strcpy(systemAddress, sysAddrs), *physObjects = *obj; };
 };
 #pragma pack (pop)
 

@@ -44,6 +44,11 @@ public:
 	// Remote array tracking
 	int numRemoteArrays = 0;
 
+	// array of system addresses for order of recieved updates 
+	char systemAddressOrder[PLYR_MAX][512];
+
+	// array of bools to check state of each system address
+	bool systemAddressUpdated[PLYR_MAX];
 	// functions
 	//ctor
 	PhysicsManager();
@@ -59,9 +64,13 @@ public:
 	// clear all arrays
 	bool ClearAllArrays();
 	// copy circle physics object array to master
-	bool CopyPhysicsCircleObjectArray(PhysicsCircleObject objArray[OBJ_MAX]);
+	bool CopyPhysicsCircleObjectArray(PhysicsCircleObject objArray[OBJ_MAX], char sysAddress[512]);
 	// Update objects
 	void UpdateObjects(float windowWidth, float windowHeight, float dt);
+
+	int GetIndexFromSystemAddress(char sysAddres[512]);
+	void ResetSytemAddressBools();
+	bool PhysicsManager::CheckPhysicsCircleObjectArray(PhysicsCircleObject objArray[OBJ_MAX], char sysAddress[512]);
 };
 
 

@@ -8,7 +8,7 @@ PhysicsCircleObject::PhysicsCircleObject()
 	SetPosition(0.0f, 0.0f);
 	SetVelocity(0.0f, 0.0f);
 	radius = 0;
-
+	
 }
 
 PhysicsCircleObject::PhysicsCircleObject(float x_pos, float y_pos, float x_vel, float y_vel, float x_acc, float y_acc, float rad)
@@ -17,6 +17,7 @@ PhysicsCircleObject::PhysicsCircleObject(float x_pos, float y_pos, float x_vel, 
 	SetVelocity(xVel, yVel);
 	SetAcceleration(xAcc, yAcc);
 	radius = rad;
+	
 }
 
 void PhysicsCircleObject::UpdatePosition(float dt)
@@ -92,11 +93,14 @@ void PhysicsManager::InitAllLocalsToZero()
 
 void PhysicsManager::InitAllToZero()
 {
+	
 	numOfLocalObjs = 0;
 	numRemoteArrays = 0;
 	int i, j;
 	for (i = 0; i < PLYR_MAX; i++)
 	{
+		memset(systemAddressOrder[i], 0, sizeof (char[512]));
+		systemAddressUpdated[i] = false;
 		for (j = 0; j < OBJ_MAX; j++)
 		{
 			PhysicsCircleObject* circleObj = new PhysicsCircleObject;
@@ -104,6 +108,7 @@ void PhysicsManager::InitAllToZero()
 			circleObj->SetPosition(0, 0);
 			circleObj->SetVelocity(0, 0);
 			physicsCircleManager[i][j] = circleObj;
+
 		}
 	}
 }
@@ -174,12 +179,17 @@ bool PhysicsManager::ClearAllArrays()
 	return true;
 }
 
-bool PhysicsManager::CopyPhysicsCircleObjectArray(PhysicsCircleObject objArray[OBJ_MAX])
+bool PhysicsManager::CopyPhysicsCircleObjectArray(PhysicsCircleObject objArray[OBJ_MAX], char sysAddress[512])
 {
+	
 	if (numRemoteArrays < PLYR_MAX)
 	{
+
+		strcpy(systemAddressOrder[numRemoteArrays], sysAddress);
+
 		// increment arrays on the remote end
 		numRemoteArrays += 1;
+
 		int i;
 		for (i = 0; i < OBJ_MAX; i++)
 		{
@@ -201,6 +211,26 @@ bool PhysicsManager::CopyPhysicsCircleObjectArray(PhysicsCircleObject objArray[O
 	return false;
 }
 
+bool PhysicsManager::CheckPhysicsCircleObjectArray(PhysicsCircleObject objArray[OBJ_MAX], char sysAddress[512])
+{
+	int addrIndex = GetIndexFromSystemAddress(sysAddress);
+
+
+	// increment arrays on the remote end
+	numRemoteArrays += 1;
+	int i;
+	for (i = 0; i < OBJ_MAX; i++)
+	{
+
+		physicsCircleManager[addrIndex][i]->radius = objArray[i].radius;
+		physicsCircleManager[addrIndex][i]->SetPosition(objArray[i].xPos, objArray[i].yPos);
+		physicsCircleManager[addrIndex][i]->SetVelocity(objArray[i].xVel, objArray[i].yVel);
+		physicsCircleManager[addrIndex][i]->SetAcceleration(objArray[i].xAcc, objArray[i].yAcc);
+	}
+	
+	return true;
+}
+
 void PhysicsManager::UpdateObjects(float windowWidth, float windowHeight, float dt)
 {
 	int i = 0;
@@ -212,5 +242,25 @@ void PhysicsManager::UpdateObjects(float windowWidth, float windowHeight, float 
 			physicsCircleManager[i][j]->CheckEdgeScreenCollision(windowWidth, windowHeight);
 			physicsCircleManager[i][j]->UpdatePosition(dt);
 		}
+	}
+}
+
+int PhysicsManager::GetIndexFromSystemAddress(char sysAddres[512])
+{
+	for (int i = 0; i < PLYR_MAX; i++)
+	{
+		if (systemAddressOrder[i] == sysAddres)
+		{
+			return i;
+		}
+	}
+	return -1;
+}
+
+void PhysicsManager::ResetSytemAddressBools()
+{
+	for (int i = 0; i < PLYR_MAX; i++)
+	{
+		systemAddressUpdated[i] = false;
 	}
 }

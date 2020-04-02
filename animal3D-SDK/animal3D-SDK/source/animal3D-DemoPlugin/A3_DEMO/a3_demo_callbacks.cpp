@@ -572,7 +572,7 @@ void a3DemoNetworking_recieve()
 			// Recieve event packet
 			PhysicsObjectDelivery* p = (PhysicsObjectDelivery*)rakClient.packet->data;
 			// add to physics manager 
-			physicsManager.CopyPhysicsCircleObjectArray(p->physObjects);
+			physicsManager.CopyPhysicsCircleObjectArray(p->physObjects, p->systemAddress);
 			
 		}
 		break;
@@ -584,7 +584,7 @@ void a3DemoNetworking_recieve()
 			PhysicsObjectDelivery* p = (PhysicsObjectDelivery*)rakClient.packet->data;
 
 			// add to physics manager 
-			physicsManager.CopyPhysicsCircleObjectArray(p->physObjects);
+			physicsManager.CopyPhysicsCircleObjectArray(p->physObjects, p->systemAddress);
 
 			// update positions
 
@@ -975,7 +975,7 @@ void a3DemoNetworkingModeUpdate(a3_DemoState const* demostate)
 		if (physicsManager.physicsCircleManager[0][0])
 		{
 			// Send physics objects
-			PhysicsObjectDelivery objectsDelivery(ID_PHYSICSOBJECT_SERVER_UPDATE, *physicsManager.physicsCircleManager[0]);
+			PhysicsObjectDelivery objectsDelivery(ID_PHYSICSOBJECT_SERVER_UPDATE, rakClient.thisUser.systemAddress, *physicsManager.physicsCircleManager[0]);
 			rakClient.peer->Send((const char*)&objectsDelivery, sizeof(objectsDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.hostSystemAddress, false);
 
 			// Clear array every frame
@@ -986,7 +986,7 @@ void a3DemoNetworkingModeUpdate(a3_DemoState const* demostate)
 	{
 		for (int i = 1; i < rakClient.currentUsers - 1; i++)
 		{
-			PhysicsObjectDelivery objectsDelivery(ID_PHYSICSOBJECT_CLIENT_UPDATE, *physicsManager.physicsCircleManager[i]);
+			PhysicsObjectDelivery objectsDelivery(ID_PHYSICSOBJECT_CLIENT_UPDATE, rakClient.thisUser.systemAddress,  *physicsManager.physicsCircleManager[i]);
 			rakClient.peer->Send((const char*)& objectsDelivery, sizeof(objectsDelivery), HIGH_PRIORITY, RELIABLE_ORDERED, 0, (RakNet::AddressOrGUID)rakClient.thisUser.systemAddress, true);
 		}
 
